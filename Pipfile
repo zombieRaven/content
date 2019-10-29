@@ -1,0 +1,32 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+google = "*"
+google-search-api = "*"
+pyping = "*"
+threatconnect = "*"
+psycopg2 = "*"
+pdfx = "*"
+pypdf2 = "*"
+splunk-sdk = "*"
+pyyaml = "*"
+python-libnmap = "*"
+dxlclient = "*"
+dxlmarclient = "*"
+dxltieclient = "*"
+lxml = "*"
+langdetect = "*"
+pyvim = "*"
+pyvmomi = "*"
+pytest = "*"
+requests = "*"
+pykwalify = "*"
+mock = "*"
+
+[requires]
+python_version = "3.7"
