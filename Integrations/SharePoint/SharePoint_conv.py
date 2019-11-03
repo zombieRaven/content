@@ -47,12 +47,12 @@ class Client(BaseClient):
         self.client_secret = demisto.params().get('client_secret')  # TODO: remove to const
         self.auto_url = f"https://login.microsoftonline.com/{demisto.params().get('tenant_id')}/oauth2/v2.0/token"  # TODO: remove to const
         self.tenant_domain = demisto.params().get('share_point_domain')
-        self.access_token = self.get_api_token()
+        self.access_token = self.get_api_token()  # TODO: there are two tokens - for work account and for user account. need to think about it when working on auth proxy
         self.headers = {'Authorization': f'Bearer {self.access_token}'}  # TODO: remove to const
 
 
 
-    def _http_request(self, method, url, params=None, data=None, json=None, headers=None):
+    def _http_request(self, method, url, params=None, data=None, json=None, headers=None, files=None):
         # A wrapper for requests lib to send our requests and handle requests and responses better
 
         res = requests.request(
@@ -62,7 +62,8 @@ class Client(BaseClient):
             params=params,
             data=data,
             json=json,
-            headers=headers
+            headers=headers,
+            files=files
         )
         if res.status_code == 401:
             self.get_api_token()
@@ -104,7 +105,7 @@ class Client(BaseClient):
             return_error('could not get access token')
             raise
         else:
-            self.access_token = access_token
+            return access_token
 
     def get_items_request(self, item_ids, is_active):
         # # The service endpoint to request from
@@ -178,7 +179,7 @@ class Client(BaseClient):
 
     def get_item_id_by_path(self, path, site_id):
         # site_id = convert_site_name_to_site_id(site_name)  # TODO comment out
-        # TODO: path: need to add slash and back slash validation
+        # TODO: path: need to add slash and back slash validation - path validation
         access_token = self.get_api_token()  # TODO: put this in a class and access token will be an attribute
         headers = {'Authorization': f'Bearer {access_token}'}
         query_string = {"$select": "id"}
@@ -232,7 +233,7 @@ class Client(BaseClient):
         :return:
         """
         object_type = object_type.lower()
-        file_path = r'/Users/gberger/Desktop/Untitled.docx' #  TODO: remove when finish to debug
+        file_path = r'/Users/gberger/Desktop/Untitled.txt' #  TODO: remove when finish to debug
         # file_path = demisto.getFilePath(entry_id).get(‘path’) # TODO: change it to the file_path
 
         self.validate_object_type(object_type, object_type_id)
@@ -246,9 +247,12 @@ class Client(BaseClient):
         else:
             url = f'{object_type}/{object_type_id}/drive/items/{parent_id}:/{file_name}:/content'
             # for sites, groups, users
-        url = self.base_url + f'/{url}'
+        url = BASE_URL + f'/{url}'
         with open(file_path, 'rb') as file:
+            self.headers['Content-Type'] = 'application/octet-stream'
             return self._http_request('PUT', url, data=file, headers=self.headers)
+        # file = {'file': open(file_path, 'rb')}
+        # self._http_request('PUT', url, data=file, headers=self.headers)
 
 
     def create_folder(self, folder_name, path, site_name):
