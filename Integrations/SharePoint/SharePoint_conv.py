@@ -1,6 +1,9 @@
 import demistomock as demisto
-from Scripts.CommonServerPython.CommonServerPython import *
+from CommonServerPython import *
 from CommonServerUserPython import *
+
+from Scripts.CommonServerPython.CommonServerPython import *
+
 
 ''' IMPORTS '''
 
@@ -20,10 +23,13 @@ requests.packages.urllib3.disable_warnings()
 # Service base URL
 
 
-BASE_URL = 'https://graph.microsoft.com/v1.0'
+
 # Headers to be sent in requests
 SITE_ID = 'Demistodev.sharepoint.com,142d3744-cd7e-4f4c-bbe9-f3dae7ebdc83,9e632eea-5727-4232-b68a-ecd4b9a460d4'
 # TODO: this is only for debugging. remove it when test it in demisto.
+BASE_URL = 'https://graph.microsoft.com/v1.0'
+GRANT_TYPE = 'client_credentials'
+SCOPE = 'https://graph.microsoft.com/.default'
 INTEGRATION_NAME = 'SharePoint'
 HEADERS = {
     'Content-Type': 'application/x-www-form-urlencoded',
@@ -35,16 +41,16 @@ class Client(BaseClient):
     Client will implement the service API, should not contain Demisto logic.
     Should do requests and return data
     """
-    def __init__(self):
-        self.use_ssl = not demisto.params().get('insecure', False)
-        self.client_id = demisto.params().get('client_id')
-        self.client_secret = demisto.params().get('client_secret')
-        self.grant_type = 'client_credentials'
-        self.scope = 'https://graph.microsoft.com/.default'
-        self.auto_url = f"https://login.microsoftonline.com/{demisto.params().get('tenant_id')}/oauth2/v2.0/token"
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.client_id = demisto.params().get('client_id')  # TODO: remove to const
+        self.client_secret = demisto.params().get('client_secret')  # TODO: remove to const
+        self.auto_url = f"https://login.microsoftonline.com/{demisto.params().get('tenant_id')}/oauth2/v2.0/token"  # TODO: remove to const
         self.tenant_domain = demisto.params().get('share_point_domain')
+        self.access_token = self.get_api_token()
+        self.headers = {'Authorization': f'Bearer {self.access_token}'}  # TODO: remove to const
 
-        super().__init__()
+
 
     def _http_request(self, method, url, params=None, data=None, json=None, headers=None):
         # A wrapper for requests lib to send our requests and handle requests and responses better
@@ -52,12 +58,15 @@ class Client(BaseClient):
         res = requests.request(
             method,
             url,
-            verify=self.use_ssl,
+            verify=self._verify,
             params=params,
             data=data,
             json=json,
             headers=headers
         )
+        if res.status_code == 401:
+            self.get_api_token()
+
         # Handle error responses gracefully
         if res.status_code not in {200, 204, 201}:
             return_error('Error in API call to Example Integration [%d] - %s' % (res.status_code, res.reason))
@@ -86,35 +95,36 @@ class Client(BaseClient):
         res = self._http_request('POST', self.auto_url, data=urlencode({
             'client_id': self.client_id,
             'client_secret': self.client_secret,
-            'grant_type': self.grant_type,
-            'scope': self.scope
+            'grant_type': GRANT_TYPE,
+            'scope': SCOPE
         }), headers=HEADERS)
         try:
             access_token = res['access_token']
         except KeyError:
-            demisto.error('could not get acceess token')
+            return_error('could not get access token')
             raise
         else:
-            return access_token
+            self.access_token = access_token
 
     def get_items_request(self, item_ids, is_active):
-        # The service endpoint to request from
-        endpoint_url = 'items'
-        # Dictionary of params for the request
-        params = {
-            'ids': item_ids,
-            'isActive': is_active
-        }
-        # Send a request using our http_request wrapper
-        response = self._http_request('GET', endpoint_url, params)
-        # Check if response contains errors
-        if response.get('errors'):
-            return_error(response.get('errors'))
-        # Check if response contains any data to parse
-        if 'data' in response:
-            return response.get('data')
-        # If neither was found, return back empty results
-        return {}
+        # # The service endpoint to request from
+    #         # endpoint_url = 'items'
+    #         # # Dictionary of params for the request
+    #         # params = {
+    #         #     'ids': item_ids,
+    #         #     'isActive': is_active
+    #         # }
+    #         # # Send a request using our http_request wrapper
+    #         # response = self._http_request('GET', endpoint_url, params)
+    #         # # Check if response contains errors
+    #         # if response.get('errors'):
+    #         #     return_error(response.get('errors'))
+    #         # # Check if response contains any data to parse
+    #         # if 'data' in response:
+    #         #     return response.get('data')
+    #         # # If neither was found, return back empty results
+    #         # return {}
+        pass
 
     def convert_site_name_to_site_id(self, site_name):
         url = BASE_URL + '/sites/' + self.tenant_domain + f':/sites/{site_name}?'
@@ -124,7 +134,7 @@ class Client(BaseClient):
             return False  # TODO: return an error
         final_headers = {}
         final_headers['Authorization'] = f'Bearer {access_token}'
-        res = self._self._http_request('GET', url, headers=final_headers, params=query_string)
+        res = self._http_request('GET', url, headers=final_headers, params=query_string)
         try:
             site_id = res['id']
         except KeyError:
@@ -141,7 +151,7 @@ class Client(BaseClient):
         url = BASE_URL + '/sites/' + site_id + '/drive'
         query_string = {"$select": "id"}
 
-        res = self._self._http_request('GET', url, params=query_string, headers=headers)
+        res = self._http_request('GET', url, params=query_string, headers=headers)
         try:
             documents_id = res['id']
         except KeyError:
@@ -174,7 +184,7 @@ class Client(BaseClient):
         query_string = {"$select": "id"}
         url = BASE_URL + f'/sites/{site_id}/drive/root:/{path}?'
 
-        res = self._self._http_request('GET', url, params=query_string, headers=headers)
+        res = self._http_request('GET', url, params=query_string, headers=headers)
         try:
             item_id = res['id']
         except KeyError:
@@ -191,8 +201,8 @@ class Client(BaseClient):
         :return: demisto.output
         """
         file_path = r'/Users/gberger/Desktop/Untitled.docx'
-        access_token = self.get_api_token()
-        headers = {'Authorization': f'Bearer {access_token}'}
+
+
 
         # file_path = demisto.getFilePath(entry_id).get(‘path’) # TODO: change it to the file_path
 
@@ -201,9 +211,44 @@ class Client(BaseClient):
         url = BASE_URL + f'/sites/{site_id}/drive/items/{documents_id}:/{file_name}:/content'
 
         with open(file_path, 'rb') as file:
-            res = self.http_request('PUT', url, data=file, headers=headers)
-        if res:
-            pass  # TODO: add test for if the action was successful
+            return self._http_request('PUT', url, data=file, headers=headers)
+
+    def validate_object_type(self, object_type, object_type_id):
+        if object_type not in ['me', 'drives', 'groups', 'sites', 'users']:
+            return_error("object type can be only the next values: \"'me', 'drives', 'groups', 'sites', 'users'\"")
+
+        if object_type_id != 'me':
+            if not object_type_id:
+                return_error("for \"'drives', 'groups', 'sites', 'users'\", must pass 'object_type_id' as argument")
+
+    def upload_new_file(self, object_type, parent_id, file_name, entry_id, object_type_id=None):
+        """
+        this function upload new file to a selected folder(parent_id)
+        :param object_type: drive/ group/ me/ site/ users
+        :param object_type_id: the selected object type id.
+        :param parent_id: 
+        :param file_name:
+        :param entry_id: 
+        :return:
+        """
+        object_type = object_type.lower()
+        file_path = r'/Users/gberger/Desktop/Untitled.docx' #  TODO: remove when finish to debug
+        # file_path = demisto.getFilePath(entry_id).get(‘path’) # TODO: change it to the file_path
+
+        self.validate_object_type(object_type, object_type_id)
+
+        if 'me' == object_type:
+            url = f'{object_type}/drive/items/{parent_id}:/{file_name}:/content'
+
+        elif 'drives' == object_type:
+            url = f'{object_type}/{object_type_id}/items/{parent_id}:/{file_name}:/content'
+
+        else:
+            url = f'{object_type}/{object_type_id}/drive/items/{parent_id}:/{file_name}:/content'
+            # for sites, groups, users
+        url = self.base_url + f'/{url}'
+        with open(file_path, 'rb') as file:
+            return self._http_request('PUT', url, data=file, headers=self.headers)
 
 
     def create_folder(self, folder_name, path, site_name):
@@ -232,6 +277,33 @@ class Client(BaseClient):
         res = self._http_request('DELETE', url, headers=headers)  # TODO: add validation if it works
 
 
+def upload_new_file_command(client, args):
+
+    object_type = args.get('object_type')
+    entry_id = args.get('entry_id')
+    parent_id = args.get('parent_id')
+    file_name = args.get('file_name')
+    object_type_id = args.get('object_type_id')
+
+    result = client.upload_new_file(object_type, parent_id, file_name, entry_id, object_type_id)
+
+
+    context_entry = result # TODO: think about what I want to return to the user: file name ? location? date_of_creation ?
+
+    title = f'{INTEGRATION_NAME} - File information:'
+    # Creating human readable for War room
+    human_readable = tableToMarkdown(title, context_entry)
+
+    # context == output
+    context = {
+        f'{INTEGRATION_NAME}.Document(val.ID && val.ID === obj.ID)': context_entry
+    }
+
+    return (
+        human_readable,
+        context,
+        result
+    )
 def upload_document_to_document_folder_command(client, args):
 
     file_name = args.get('file_name')
@@ -241,7 +313,7 @@ def upload_document_to_document_folder_command(client, args):
     result = client.upload_document_to_document_folder(file_name, entry_id, site_name)
 
 
-    context_entry = raw_response_to_context(result)  # TODO: think about what I want to return to the user: file name ? location? date_of_creation ?
+    context_entry = result  # TODO: think about what I want to return to the user: file name ? location? date_of_creation ?
 
     title = f'{INTEGRATION_NAME} - File information:'
     # Creating human readable for War room
@@ -314,16 +386,20 @@ def main():
     CLIENT_SECRET = demisto.params().get('client_secret')
     # Remove trailing slash to prevent wrong URL path to service
     # SERVER = f"https://login.microsoftonline.com/{demisto.params().get('tenant_id')}"
+
     # Should we use SSL
     verify_certificate = not demisto.params().get('insecure', False)
-    # How many time before the first fetch to retrieve incidents
-    FETCH_TIME = demisto.params().get('fetch_time', '3 days')
-    SHARE_POINT_DOMAIN = demisto.params().get('share_point_domain')
     proxy = demisto.params().get('proxy', False)
+
+
+    # How many time before the first fetch to retrieve incidents
+    SHARE_POINT_DOMAIN = demisto.params().get('share_point_domain')
+
 
     LOG(f'Command being called is {demisto.command()}')
     try:
-        client = Client()
+        # client = Client(BASE_URL, proxy=proxy, verify=verify_certificate)
+        client = Client(base_url=BASE_URL, verify=verify_certificate, proxy=proxy)
 
         if demisto.command() == 'test-module':
             # This is the call made when pressing the integration Test button.
@@ -348,6 +424,8 @@ def main():
 
         elif demisto.command() == 'upload_document_to_document_folder_command':
             return_outputs(*upload_document_to_document_folder_command(client, demisto.args()))
+        elif demisto.command() == 'upload_new_file_command':
+            return_outputs(*upload_new_file_command(client, demisto.args()))
 
     # Log exceptions
     except Exception as e:
@@ -366,9 +444,6 @@ def item_to_incident(item):
 
 
 ''' COMMANDS + REQUESTS FUNCTIONS '''
-
-
-
 
 
 def test_module(client):
