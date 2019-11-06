@@ -25,6 +25,7 @@ USER_SUFFIX = '/repos/{}/{}'.format(USER, REPOSITORY)
 ISSUE_SUFFIX = USER_SUFFIX + '/issues'
 RELEASE_SUFFIX = USER_SUFFIX + '/releases'
 PULLS_SUFFIX = USER_SUFFIX + '/pulls'
+CONTENTS_SUFFIX = USER_SUFFIX + '/contents'
 
 RELEASE_HEADERS = ['ID', 'Name', 'Download_count', 'Body', 'Created_at', 'Published_at']
 ISSUE_HEADERS = ['ID', 'Repository', 'Title', 'State', 'Body', 'Created_at', 'Updated_at', 'Closed_at', 'Closed_by',
@@ -34,7 +35,6 @@ ISSUE_HEADERS = ['ID', 'Repository', 'Title', 'State', 'Body', 'Created_at', 'Up
 HEADERS = {
     'Authorization': "Bearer " + TOKEN
 }
-
 
 ''' HELPER FUNCTIONS '''
 
@@ -945,6 +945,17 @@ def get_stale_prs(stale_time: str, label: str) -> list:
     return relevant_prs
 
 
+def get_file(file_path):
+    res = http_request(method='GET', url_suffix=CONTENTS_SUFFIX + '/{}'.format(file_path))
+    download_url = res.get('download_url')
+    file = requests.request(
+        'GET',
+        download_url,
+        verify=USE_SSL,
+        headers=HEADERS
+    ).content
+    return json.loads(file)
+
 def get_stale_prs_command():
     args = demisto.args()
     stale_time = args.get('stale_time', '3 days')
@@ -1120,6 +1131,13 @@ def fetch_incidents_command():
     demisto.incidents(incidents)
 
 
+def get_file_command():
+    file_path = demisto.args('file_path')
+    file_json = get_file(file_path)
+    return_outputs(tableToMarkdown())
+
+
+
 ''' COMMANDS MANAGER / SWITCH PANEL '''
 
 COMMANDS = {
@@ -1148,9 +1166,9 @@ COMMANDS = {
     'GitHub-list-pr-review-comments': list_pr_review_comments_command,
     'GitHub-update-pull-request': update_pull_request_command,
     'GitHub-is-pr-merged': is_pr_merged_command,
-    'GitHub-create-pull-request': create_pull_request_command
+    'GitHub-create-pull-request': create_pull_request_command,
+    'GitHub-get-file': get_file_command
 }
-
 
 '''EXECUTION'''
 
