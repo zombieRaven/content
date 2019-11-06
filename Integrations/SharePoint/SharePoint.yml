@@ -7,8 +7,7 @@ configuration:
   name: incidentType
   required: false
   type: 13
-- defaultvalue: ''
-  display: Trust any certificate (not secure)
+- display: Trust any certificate (not secure)
   name: insecure
   required: false
   type: 8
@@ -78,6 +77,17 @@ script:
     - contextPath: Example.Item.CreatedDate
       description: Item creation date
       type: date
+  - arguments:
+    - default: false
+      isArray: false
+      name: object_type
+      required: false
+      secret: false
+    deprecated: false
+    description: This command allows you to provide the contents of a new file. This
+      method only supports files up to 4MB in size
+    execution: false
+    name: upload-new-file
   dockerimage: demisto/python3:3.7.4.2728
   isfetch: false
   longRunning: false
@@ -87,4 +97,4 @@ script:
   subtype: python3
   type: python
 tests:
-  - No test - integration in writing.
+- No test - integration in writing.
