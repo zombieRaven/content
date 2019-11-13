@@ -1,4 +1,4 @@
-category: Authentication
+category: Utilities
 commonfields:
   id: SharePoint
   version: -1
@@ -31,8 +31,9 @@ configuration:
   name: share_point_domain
   required: false
   type: 0
-description: Integration Template
-display: SharePoint
+description: Microsoft Graph lets your app get authorized access to files in OneDrive,
+  SharePoint and MS Teams across all organization. (requires admin consent).
+display: Microsoft Graph Files Admin
 name: SharePoint
 script:
   commands:
