@@ -1,0 +1,4 @@
+---
+- include_tasks: install_mac_pack.yml
+- include_tasks: setup_pyenv.yml
+- include_tasks: setup_virtualenv.yml

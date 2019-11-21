@@ -1,0 +1,9 @@
+---
+brew_cask_packages:
+    -
+brew_packages:
+    - 'git'
+    - 'pyenv'
+    - 'python'
+install_homebrew_if_missing: true
+upgrade_homebrew_packages: true
