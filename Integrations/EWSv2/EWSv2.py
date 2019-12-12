@@ -35,11 +35,12 @@ sys.setdefaultencoding('utf8')  # pylint: disable=E1101
 
 # Ignore warnings print to stdout
 warnings.filterwarnings("ignore")
-
+accounts_list = list()
 # Docker BC
 MNS = None
 TNS = None
-if exchangelib.__version__ == "1.12.0":
+ONE_TWELVE_SUPPORTED_VERSIONS = ("1.12.5", "1.12.0")
+if exchangelib.__version__ in ONE_TWELVE_SUPPORTED_VERSIONS:
     MNS, TNS = exchangelib.util.MNS, exchangelib.util.TNS
 else:
     MNS, TNS = exchangelib.transport.MNS, exchangelib.transport.TNS  # pylint: disable=E1101
@@ -322,7 +323,7 @@ config = None
 credentials = None
 
 PUBLIC_FOLDERS_ERROR = 'Please update your docker image to use public folders'
-if IS_PUBLIC_FOLDER and exchangelib.__version__ != "1.12.0":
+if IS_PUBLIC_FOLDER and exchangelib.__version__ not in ONE_TWELVE_SUPPORTED_VERSIONS:
     if demisto.command() == 'test-module':
         demisto.results(PUBLIC_FOLDERS_ERROR)
         exit(3)
@@ -494,11 +495,16 @@ def get_account_autodiscover(account_email, access_type=ACCESS_TYPE):
 
 
 def get_account(account_email, access_type=ACCESS_TYPE):
+    global accounts_list
     if not AUTO_DISCOVERY:
-        return Account(
+        acc = Account(
             primary_smtp_address=account_email, autodiscover=False, config=config, access_type=access_type,
         )
-    return get_account_autodiscover(account_email, access_type)
+    else:
+        acc = get_account_autodiscover(account_email, access_type)
+    accounts_list.append(acc)
+    return acc
+
 
 
 # LOGGING
@@ -608,7 +614,7 @@ def get_items_from_mailbox(account, item_ids):
     result = [x for x in result if not isinstance(x, ErrorItemNotFound)]
     if len(result) != len(item_ids):
         raise Exception("One or more items were not found. Check the input item ids")
-    if exchangelib.__version__ != "1.12.0":  # Docker BC
+    if exchangelib.__version__ not in ONE_TWELVE_SUPPORTED_VERSIONS:  # Docker BC
         for item in result:
             item.folder = Folder(account=account)
     return result
@@ -622,7 +628,7 @@ def get_item_from_mailbox(account, item_id):
 
 
 def is_default_folder(folder_path, is_public):
-    if exchangelib.__version__ != "1.12.0":  # Docker BC
+    if exchangelib.__version__ not in ONE_TWELVE_SUPPORTED_VERSIONS:  # Docker BC
         return False
 
     if is_public is not None:
@@ -992,7 +998,7 @@ def parse_item_as_dict(item, email_address, camel_case=False, compact_fields=Fal
                        'size', 'subject', 'text_body', 'headers', 'body', 'folder_path', 'is_read']
 
         # Docker BC
-        if exchangelib.__version__ == "1.12.0":
+        if exchangelib.__version__ in ONE_TWELVE_SUPPORTED_VERSIONS:
             if 'id' in raw_dict:
                 new_dict['item_id'] = raw_dict['id']
         else:
@@ -1410,7 +1416,7 @@ def delete_items(item_ids, delete_type, target_mailbox=None):
 def prepare_args(d):
     d = dict((k.replace("-", "_"), v) for k, v in d.items())
     if 'is_public' in d:
-        if exchangelib.__version__ != "1.12.0":  # Docker BC
+        if exchangelib.__version__ not in ONE_TWELVE_SUPPORTED_VERSIONS:  # Docker BC
             raise Exception(PUBLIC_FOLDERS_ERROR)
         else:
             d['is_public'] = d['is_public'] == 'True'
@@ -1583,7 +1589,7 @@ def create_folder(new_folder_name, folder_path, target_mailbox=None):
 def find_folders(target_mailbox=None, is_public=None):
     account = get_account(target_mailbox or ACCOUNT_EMAIL)
     root = account.root
-    if exchangelib.__version__ == "1.12.0":  # Docker BC
+    if exchangelib.__version__ in ONE_TWELVE_SUPPORTED_VERSIONS:  # Docker BC
         if is_public:
             root = account.public_folders_root
     folders = []
@@ -1645,7 +1651,7 @@ def get_items_from_folder(folder_path, limit=100, target_mailbox=None, is_public
 
     hm_headers = ['sender', 'subject', 'hasAttachments', 'datetimeReceived',
                   'receivedBy', 'author', 'toRecipients', ]
-    if exchangelib.__version__ == "1.12.0":  # Docker BC
+    if exchangelib.__version__ in ONE_TWELVE_SUPPORTED_VERSIONS:  # Docker BC
         hm_headers.append('itemId')
     return get_entry_for_object('Items in folder ' + folder_path,
                                 CONTEXT_UPDATE_EWS_ITEM,
@@ -1699,7 +1705,7 @@ def folder_to_context_entry(f):
 def check_cs_prereqs():
     if 'outlook.office365.com' not in EWS_SERVER:
         raise Exception("This command is only supported for Office 365")
-    if exchangelib.__version__ != "1.12.0":
+    if exchangelib.__version__ not in ONE_TWELVE_SUPPORTED_VERSIONS:
         raise Exception("Please update your docker image to use this command")
 
 
@@ -2043,7 +2049,7 @@ def main():
                                    "Additional information: {}".format(e.message)
         if isinstance(e, ErrorInvalidPropertyRequest):
             error_message_simple = "Verify that the Exchange version is correct."
-        elif exchangelib.__version__ == "1.12.0":
+        elif exchangelib.__version__ in ONE_TWELVE_SUPPORTED_VERSIONS:
             from exchangelib.errors import MalformedResponseError
 
             if IS_TEST_MODULE and isinstance(e, MalformedResponseError):
@@ -2085,6 +2091,7 @@ def main():
                 {"Type": entryTypes["error"], "ContentsFormat": formats["text"], "Contents": error_message_simple})
         demisto.error("%s: %s" % (e.__class__.__name__, error_message))
     finally:
+        exchangelib.close_connections()
         try:
             if isinstance(config, Configuration):
                 # Sometimes new threads are created but never killed, so killing them manually.
@@ -2093,7 +2100,15 @@ def main():
                     del config.protocol.__dict__["thread_pool"]
         except Exception:
             demisto.debug("Error was found in terminating threads in config.protocol, ignoring.")
-        exchangelib.close_connections()
+        for account in accounts_list:
+            if isinstance(account, Account):
+                try:
+                    # Sometimes new threads are created but never killed, so killing them manually.
+                    if "thread_pool" in account.protocol.__dict__:
+                        account.protocol.thread_pool.terminate()
+                        del account.protocol.__dict__["thread_pool"]
+                except Exception:
+                    demisto.debug("Error was found in terminating threads in config.protocol, ignoring.")
         if log_stream:
             try:
                 logging.getLogger().removeHandler(log_handler)  # type: ignore
