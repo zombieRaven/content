@@ -577,6 +577,7 @@ def enrich_for_script_id(given_script_id, given_version, script_names, script_se
                                      updated_script_names, updated_playbook_names, catched_scripts, catched_playbooks,
                                      tests_set)
 
+
     for playbook in playbook_set:
         playbook_data = list(playbook.values())[0]
         if playbook_data.get('deprecated', False):
