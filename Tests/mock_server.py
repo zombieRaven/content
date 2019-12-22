@@ -264,8 +264,9 @@ class MITMProxy:
 
         # if the keys file doesn't exist, create an empty one
         problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
-        if not os.path.exists(problem_keys_filepath):
-            open(problem_keys_filepath, 'a').close()
+        key_file_exists = ["[", "-f", problem_keys_filepath, "]"]
+        if not self.ami.call(key_file_exists) == 0:
+            self.ami.call(['touch', problem_keys_filepath])
 
         # if recording
         # record with detect_timestamps and then rewrite mock file
@@ -273,8 +274,7 @@ class MITMProxy:
             actions = '-s ./Tests/timestamp_replacer.py --set detect_timestamp=true' \
                       ' --set keys_filepath={} --save-stream-file'.format(problem_keys_filepath)
         else:
-            with open(problem_keys_filepath, 'r') as problem_keys_file:
-                problem_keys = problem_keys_file.read()
+            problem_keys = self.ami.check_output(['cat', problem_keys_filepath])
             actions = '-s ./Tests/timestamp_replacer.py --set keys_to_replace=' \
                       '"{}" --server-replay-kill-extra --server-replay'.format(problem_keys)
 
@@ -295,12 +295,11 @@ class MITMProxy:
                             .format(self.process.returncode, self.process.stdout.read(), self.process.stderr.read()))
 
         if record:
-            with open(problem_keys_filepath, 'r') as problem_keys_file:
-                problem_keys = problem_keys_file.read()
+            problem_keys = self.ami.check_output(['cat', problem_keys_filepath])
             mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
             # rewrite mock file with problematic keys in request bodies replaced
             command = 'mitmdump -ns ./Tests/timestamp_replacer.py --set keys_to_replace=' \
-                      '"{}" -r {} -w {}'.format(problem_keys_file, mock_file_path, mock_file_path).split()
+                      '"{}" -r {} -w {}'.format(problem_keys, mock_file_path, mock_file_path).split()
             # Handle proxy log output
             if not self.debug:
                 log_file = os.path.join(path, get_log_file_path(playbook_id, record))
