@@ -30,10 +30,11 @@ class TimestampReplacer:
             '''
         )
         loader.add_option(
-            name='mock_directory',
+            name='keys_filepath',
             typespec=str,
             help='''
-            The path to the directory in which the mock and keys file reside.
+            The path to the file that contains the problematic keys for the test playbook recording that resides
+            in the same directory.
             '''
         )
 
@@ -121,10 +122,9 @@ class TimestampReplacer:
 
     def done(self):
         if ctx.options.detect_timestamps:
-            mock_dir = ctx.options.mock_directory
-            bad_keys_filepath = '{}/problematic_keys.txt'.format(mock_dir)
+            bad_keys_filepath = ctx.options.keys_filepath
             with open(bad_keys_filepath, 'w') as bad_keys_file:
-                bad_keys_file.write('\n'.join(self.keys))
+                bad_keys_file.write(' '.join(self.keys))
 
 
 addons = [TimestampReplacer()]
