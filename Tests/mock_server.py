@@ -262,8 +262,23 @@ class MITMProxy:
         # Create mock files directory
         silence_output(self.ami.call, ['mkdir', os.path.join(path, get_folder_path(playbook_id))], stderr='null')
 
+        # if the keys file doesn't exist, create an empty one
+        problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
+        if not os.path.exists(problem_keys_filepath):
+            open(problem_keys_filepath, 'a').close()
+
+        # if recording
+        # record with detect_timestamps and then rewrite mock file
+        if record:
+            actions = '-s ./Tests/timestamp_replacer.py --set detect_timestamp=true' \
+                      ' --set keys_filepath={} --save-stream-file'.format(problem_keys_filepath)
+        else:
+            with open(problem_keys_filepath, 'r') as problem_keys_file:
+                problem_keys = problem_keys_file.read()
+            actions = '-s ./Tests/timestamp_replacer.py --set keys_to_replace=' \
+                      '"{}" --server-replay-kill-extra --server-replay'.format(problem_keys)
+
         # Configure proxy server
-        actions = '--server-replay-kill-extra --server-replay' if not record else '--save-stream-file'
         command = "mitmdump --ssl-insecure --verbose --listen-port {} {}".format(self.PROXY_PORT, actions).split()
         command.append(os.path.join(path, get_mock_file_path(playbook_id)))
 
@@ -278,6 +293,29 @@ class MITMProxy:
         if self.process.returncode is not None:
             raise Exception("Proxy process terminated unexpectedly.\nExit code: {}\noutputs:\nSTDOUT\n{}\n\nSTDERR\n{}"
                             .format(self.process.returncode, self.process.stdout.read(), self.process.stderr.read()))
+
+        if record:
+            with open(problem_keys_filepath, 'r') as problem_keys_file:
+                problem_keys = problem_keys_file.read()
+            mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
+            # rewrite mock file with problematic keys in request bodies replaced
+            command = 'mitmdump -ns ./Tests/timestamp_replacer.py --set keys_to_replace=' \
+                      '"{}" -r {} -w {}'.format(problem_keys_file, mock_file_path, mock_file_path).split()
+            # Handle proxy log output
+            if not self.debug:
+                log_file = os.path.join(path, get_log_file_path(playbook_id, record))
+                command.extend(['>>{}'.format(log_file), '2>&1'])
+
+            # Do Mock File Rewrite
+            self.process = Popen(self.ami.add_ssh_prefix(command, "-t"), stdout=PIPE, stderr=PIPE)
+            self.process.poll()
+            if self.process.returncode is not None:
+                err_msg = 'Proxy process terminated unexpectedly.\nExit code: ' \
+                          '{}\noutputs:\nSTDOUT\n{}\n\nSTDERR\n{}'.format(
+                              self.process.returncode, self.process.stdout.read(), self.process.stderr.read()
+                          )
+                raise Exception(err_msg)
+
         log_file_exists = False
         seconds_since_init = 0
         # Make sure process is up and running
