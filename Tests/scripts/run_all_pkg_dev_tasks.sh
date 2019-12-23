@@ -2,7 +2,7 @@
 
 # Find all package directories and run the pkg_dev_test_tasks.py script. Will run only against
 # packages which have changed comparing in git. Unless SKIP_GIT_COMPARE_FILTER evn var is set.
-# Speciy any parameter to this script that will be passed to the pkg_dev_test_tasks.py as is
+# Speciy any parameter to this script that will be passed to the pkg_dev_test_tasks.py as is.
 
 # Env vars:
 # SKIP_GIT_COMPARE_FILTER: if set will not compare the git commit and run against all pkgs (nightly)
