@@ -285,9 +285,9 @@ class MITMProxy:
         command = "mitmdump --ssl-insecure --verbose --listen-port {} {}".format(self.PROXY_PORT, actions).split()
         command.append(os.path.join(path, get_mock_file_path(playbook_id)))
 
+        log_file = os.path.join(path, get_log_file_path(playbook_id, record))
         # Handle proxy log output
         if not self.debug:
-            log_file = os.path.join(path, get_log_file_path(playbook_id, record))
             command.extend(['>{}'.format(log_file), '2>&1'])
 
         # Start proxy server
