@@ -1556,7 +1556,7 @@ def return_warning(message, exit=False, warning='', outputs=None, ignore_auto_ex
         :type ignore_auto_extract: ``bool``
         :param ignore_auto_extract: Determines if the War Room entry will be auto-enriched. Default is false.
 
-        :return: Warning entry object
+        :return: Warning entry object.
         :rtype: ``dict``
     """
     LOG(message)
