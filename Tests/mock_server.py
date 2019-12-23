@@ -270,18 +270,21 @@ class MITMProxy:
             self.ami.call(['echo', '"{}"', '>', problem_keys_filepath])
 
         script_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'timestamp_replacer.py')
+        print('script_filepath: {}'.format(script_filepath))
+        remote_script_path = self.ami.copy_file(script_filepath)
+        print('remote_script_path: {}'.format(remote_script_path))
 
         # if recording
         # record with detect_timestamps and then rewrite mock file
         if record:
             actions = '-s {} --set detect_timestamp=true --set keys_filepath={} --save-stream-file'.format(
-                script_filepath, problem_keys_filepath
+                remote_script_path, problem_keys_filepath
             )
         else:
             problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             actions = '-s {} {} --server-replay-kill-extra --server-replay'.format(
-                script_filepath, options.strip()
+                remote_script_path, options.strip()
             )
 
         # Configure proxy server
@@ -304,7 +307,7 @@ class MITMProxy:
             problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
             mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
             # rewrite mock file with problematic keys in request bodies replaced
-            command = 'mitmdump -ns {} '.format(script_filepath)
+            command = 'mitmdump -ns {} '.format(remote_script_path)
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             if options.strip():
                 command += options
