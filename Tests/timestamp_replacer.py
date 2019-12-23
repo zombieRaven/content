@@ -11,6 +11,7 @@ class TimestampReplacer:
     def __init__(self):
         self.count = 0
         self.json_keys = set()
+        self.form_keys = set()
         self.query_keys = set()
 
     def load(self, loader):
@@ -41,10 +42,17 @@ class TimestampReplacer:
             in the same directory.
             '''
         )
+        # need to do this because arguments for these options are interpreted as 1 list item
+        query_keys = ctx.options.server_replay_ignore_params
+        ctx.options.server_replay_ignore_params = query_keys[0].split() if len(query_keys) == 1 else query_keys
+        form_keys = ctx.options.server_replay_ignore_payload_params
+        ctx.options.server_replay_ignore_payload_params = form_keys[0].split() if len(form_keys) == 1 else form_keys
 
     def request(self, flow: flow.Flow) -> None:
         self.count += 1
         req = flow.request
+        if ctx.options.detect_timestamps:
+            self.handle_url_query(flow)
         if req.method == 'POST':
             content = req.raw_content.decode()
             json_data = content.startswith('{')
@@ -52,14 +60,16 @@ class TimestampReplacer:
                 content = json.loads(content)
 
             if ctx.options.detect_timestamps:
-                form_urlencoded = 'application/x-www-form-urlencoded' in req.headers.get('content-type', '').lower()
-                if form_urlencoded:
-                    self.handle_form_urlencoded(flow)
+                if req.multipart_form:
+                    self.handle_multipart_form(flow)
+                # form_urlencoded = 'application/x-www-form-urlencoded' in req.headers.get('content-type', '').lower()
+                elif req.urlencoded_form:
+                    self.handle_urlencoded_form(flow)
                 elif json_data:
                     ctx.log.info('req num: {}\n{}'.format(self.count, content))
                     for problem_key in self.get_problematic_keys(content):
                         self.json_keys.add(problem_key)
-            else:
+            elif json_data:
                 self.modify_json_body(flow, content)
 
     def modify_json_body(self, flow: flow.Flow, json_body: dict) -> None:
@@ -109,20 +119,42 @@ class TimestampReplacer:
             ctx.log.info('modified request body:\n{}'.format(json.dumps(json_body, indent=4)))
             flow.request.raw_content = json.dumps(json_body).encode()
 
-    def handle_form_urlencoded(self, flow: flow.Flow) -> None:
-        '''Only used when detecting query parameters to ignore. Updates the query_keys that get written to the
-        bad keys file to get ignored.
+    def handle_url_query(self, flow: flow.Flow) -> None:
+        query_data = flow.request._get_query()
+        ctx.log.info('query_data: {}'.format(query_data))
+        for key, val in query_data:
+            # don't bother trying to interpret an argument less than 4 characters as some type of timestamp
+            if len(val) > 4:
+                try:
+                    parse(val)
+                    self.query_keys.add(key)
+                except ValueError:
+                    pass
+
+    def handle_multipart_form(self, flow: flow.Flow) -> None:
+        for key, val in flow.request.multipart_form.items(multi=True):
+            # don't bother trying to interpret an argument less than 4 characters as some type of timestamp
+            if len(val) > 4:
+                try:
+                    parse(val)
+                    self.form_keys.add(key)
+                except ValueError:
+                    pass
+
+    def handle_urlencoded_form(self, flow: flow.Flow) -> None:
+        '''Used when detecting what keys in an url encoded parameters to ignore.
 
         Args:
             flow (flow.Flow): The flow whose request is being inspected
         '''
-        query_data = flow.request._get_query()
-        for key, val in query_data:
-            try:
-                parse(val)
-                self.query_keys.add(key)
-            except ValueError:
-                pass
+        for key, val in flow.request.urlencoded_form.items(multi=True):
+            # don't bother trying to interpret an argument less than 4 characters as some type of timestamp
+            if len(val) > 4:
+                try:
+                    parse(val)
+                    self.form_keys.add(key)
+                except ValueError:
+                    pass
 
     def get_problematic_keys(self, content: dict) -> List[str]:
         '''Given a json request body, return the keys (in dot notation) whose values are potentially timestamp data.
@@ -198,8 +230,9 @@ class TimestampReplacer:
         if ctx.options.detect_timestamps:
             bad_keys_filepath = ctx.options.keys_filepath
             all_keys = {
-                'json_keys': ' '.join(self.json_keys),
-                'query_keys': ' '.join(self.query_keys)
+                'keys_to_replace': ' '.join(self.json_keys),
+                'server_replay_ignore_payload_params': ' '.join(self.form_keys),
+                'server_replay_ignore_params': ' '.join(self.query_keys)
             }
             with open(bad_keys_filepath, 'w') as bad_keys_file:
                 bad_keys_file.write(json.dumps(all_keys))
