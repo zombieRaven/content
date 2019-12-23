@@ -15,11 +15,12 @@ from Tests.test_utils import print_color, LOG_COLORS  # noqa: E402
 
 
 def run_dev_task(pkg_dir: str, params: Optional[List[str]], req3, req2) -> Tuple[subprocess.CompletedProcess, str]:
-    if get_image_num(pkg_dir) == 3.7:
+    py_num = get_image_num(pkg_dir)
+    if py_num == 3.7:
         req = req3
     else:
         req = req2
-
+    print("§§§§§§§§§§§§§§{}".format(py_num))
     args = ['demisto-sdk lint', '-d', pkg_dir, '-v', '--requirements', req]
     if params:
         args.extend(params)
