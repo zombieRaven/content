@@ -6,7 +6,6 @@ import concurrent.futures
 import yaml
 import glob
 from typing import List, Optional, Tuple
-from pkg_dev_test_tasks import get_dev_requirements
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONTENT_DIR = os.path.abspath(SCRIPT_DIR + '/../..')
@@ -14,13 +13,8 @@ sys.path.append(CONTENT_DIR)
 from Tests.test_utils import print_color, LOG_COLORS  # noqa: E402
 
 
-def run_dev_task(pkg_dir: str, params: Optional[List[str]], req3, req2) -> Tuple[subprocess.CompletedProcess, str]:
-    py_num = get_image_num(pkg_dir)
-    if py_num == 3.7:
-        req = req3
-    else:
-        req = req2
-    args = ['demisto-sdk lint', '-d', pkg_dir, '-v', '--requirements', req]
+def run_dev_task(pkg_dir: str, params: Optional[List[str]]) -> Tuple[subprocess.CompletedProcess, str]:
+    args = ['demisto-sdk lint', '-d', pkg_dir]
     if params:
         args.extend(params)
     cmd_line = " ".join(args)
@@ -149,19 +143,27 @@ def main():
     params = sys.argv[1::]
     fail_pkgs = []
     good_pkgs = []
-    req2 = get_dev_requirements(2.7)
-    req3 = get_dev_requirements(3.7)
-    # run CommonServer non parallel to avoid conflicts
-    # when we modify the file for mypy includes
-    if 'Scripts/CommonServerPython' in pkgs_to_run:
-        pkgs_to_run.remove('Scripts/CommonServerPython')
-        res = run_dev_task('Scripts/CommonServerPython', params)
-        handle_run_res(res, fail_pkgs, good_pkgs)
-    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures_submit = [executor.submit(run_dev_task, dir, params, req3, req2) for dir in pkgs_to_run]
-        for future in concurrent.futures.as_completed(futures_submit):
-            res = future.result()
-            handle_run_res(res, fail_pkgs, good_pkgs)
+    # req2 = get_dev_requirements(2.7)
+    # req3 = get_dev_requirements(3.7)
+    # # run CommonServer non parallel to avoid conflicts
+    # # when we modify the file for mypy includes
+    # if 'Scripts/CommonServerPython' in pkgs_to_run:
+    #     pkgs_to_run.remove('Scripts/CommonServerPython')
+    #     res = run_dev_task('Scripts/CommonServerPython', params)
+    #     handle_run_res(res, fail_pkgs, good_pkgs)
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+    #     futures_submit = [executor.submit(run_dev_task, dir, params, req3, req2) for dir in pkgs_to_run]
+    #     for future in concurrent.futures.as_completed(futures_submit):
+    #         res = future.result()
+    #         handle_run_res(res, fail_pkgs, good_pkgs)
+    for package in pkgs_to_run:
+        res_code, _ = run_dev_task(pkg_dir=package, params=params)
+        if res_code == 0:
+            good_pkgs.append(package)
+
+        else:
+            fail_pkgs.append(package)
+
     create_failed_unittests_file(fail_pkgs)
     if fail_pkgs:
         print_color("\n******* FAIL PKGS: *******", LOG_COLORS.RED)
