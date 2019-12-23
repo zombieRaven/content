@@ -269,16 +269,19 @@ class MITMProxy:
         if not self.ami.call(key_file_exists) == 0:
             self.ami.call(['echo', '"{}"', '>', problem_keys_filepath])
 
+        script_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'timestamp_replacer.py')
+
         # if recording
         # record with detect_timestamps and then rewrite mock file
         if record:
-            actions = '-s ./Tests/timestamp_replacer.py --set detect_timestamp=true' \
-                      ' --set keys_filepath={} --save-stream-file'.format(problem_keys_filepath)
+            actions = '-s {} --set detect_timestamp=true --set keys_filepath={} --save-stream-file'.format(
+                script_filepath, problem_keys_filepath
+            )
         else:
             problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
-            actions = '-s ./Tests/timestamp_replacer.py {} --server-replay-kill-extra --server-replay'.format(
-                options.strip()
+            actions = '-s {} {} --server-replay-kill-extra --server-replay'.format(
+                script_filepath, options.strip()
             )
 
         # Configure proxy server
@@ -301,7 +304,7 @@ class MITMProxy:
             problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
             mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
             # rewrite mock file with problematic keys in request bodies replaced
-            command = 'mitmdump -ns ./Tests/timestamp_replacer.py '
+            command = 'mitmdump -ns {} '.format(script_filepath)
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             if options.strip():
                 command += options
