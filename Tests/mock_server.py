@@ -314,14 +314,16 @@ class MITMProxy:
                 split_command.extend(['>>{}'.format(log_file), '2>&1'])
 
             # Do Mock File Rewrite
-            self.process = Popen(self.ami.add_ssh_prefix(split_command, "-t"), stdout=PIPE, stderr=PIPE)
-            self.process.poll()
-            if self.process.returncode is not None:
-                err_msg = 'Proxy process terminated unexpectedly.\nExit code: ' \
-                          '{}\noutputs:\nSTDOUT\n{}\n\nSTDERR\n{}'.format(
-                              self.process.returncode, self.process.stdout.read(), self.process.stderr.read()
-                          )
-                raise Exception(err_msg)
+            if not call(self.ami.add_ssh_prefix(split_command, '-t')):
+                print('There may have been a problem when filtering timestamp data from the mock file.')
+            # self.process = Popen(self.ami.add_ssh_prefix(split_command, "-t"), stdout=PIPE, stderr=PIPE)
+            # self.process.poll()
+            # if self.process.returncode is not None:
+            #     err_msg = 'Proxy process terminated unexpectedly.\nExit code: ' \
+            #               '{}\noutputs:\nSTDOUT\n{}\n\nSTDERR\n{}'.format(
+            #                   self.process.returncode, self.process.stdout.read(), self.process.stderr.read()
+            #               )
+            #     raise Exception(err_msg)
 
         log_file_exists = False
         seconds_since_init = 0
