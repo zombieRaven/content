@@ -1,5 +1,4 @@
 import json
-# import urllib
 from copy import deepcopy
 from typing import List, Union
 from mitmproxy import ctx, flow
@@ -106,12 +105,10 @@ class TimestampReplacer:
             if not skip_key:
                 if lastkey in body:
                     ctx.log.info('modifying request to "{}"'.format(flow.request.pretty_url))
-                    ctx.log.info('original request body:\n{}'.format(json.dumps(original_content, indent=4)))
                     body[lastkey] = self.count
                     modified = True
                 elif isinstance(body, list) and lastkey.isdigit() and int(lastkey) <= len(body) - 1:
                     ctx.log.info('modifying request to "{}"'.format(flow.request.pretty_url))
-                    ctx.log.info('original request body:\n{}'.format(json.dumps(original_content, indent=4)))
                     body[int(lastkey)] = self.count
                     modified = True
         if modified:
@@ -132,6 +129,11 @@ class TimestampReplacer:
                     pass
 
     def handle_multipart_form(self, flow: flow.Flow) -> None:
+        '''Used when detecting what keys in a multipart form to ignore.
+
+        Args:
+            flow (flow.Flow): The flow whose request is being inspected
+        '''
         for key, val in flow.request.multipart_form.items(multi=True):
             # don't bother trying to interpret an argument less than 4 characters as some type of timestamp
             if len(val) > 4:
@@ -174,7 +176,7 @@ class TimestampReplacer:
                     if isinstance(val, (list, dict)):
                         bad_key_paths.extend(travel_dict(val, sub_key_path))
                     else:
-                        is_string = isinstance(val, str)
+                        is_string = isinstance(val, str) and len(val) > 4
                         possible_timestamp = isinstance(val, (int, float)) and len(str(val)) >= 8
                         try:
                             if is_string or possible_timestamp:
@@ -184,7 +186,7 @@ class TimestampReplacer:
                                     if isinstance(for_eval, float):
                                         digits = str(val).split('.')
                                         for_eval = digits[0]
-                                    if len(str(for_eval)) < 14:
+                                    if len(str(for_eval)) < 13:
                                         parse(ctime(val))
                                     else:
                                         parse(ctime(val / 1000.0))
@@ -201,7 +203,7 @@ class TimestampReplacer:
                     if isinstance(val, (list, dict)):
                         bad_key_paths.extend(travel_dict(val, sub_key_path))
                     else:
-                        is_string = isinstance(val, str)
+                        is_string = isinstance(val, str) and len(val) > 4
                         possible_timestamp = isinstance(val, (int, float)) and len(str(val)) >= 8
                         try:
                             if is_string or possible_timestamp:
