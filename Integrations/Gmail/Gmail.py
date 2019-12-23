@@ -26,6 +26,7 @@ from oauth2client import service_account
 import itertools as it
 
 
+
 ''' GLOBAL VARS '''
 ADMIN_EMAIL = None
 PRIVATE_KEY_CONTENT = None

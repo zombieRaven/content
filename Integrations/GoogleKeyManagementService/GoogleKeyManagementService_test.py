@@ -48,7 +48,7 @@ def test_args_extract():
     assert project_id == 'project_name'
     assert location_id == "global"
     assert key_ring_id == "key_ring"
-    assert crypto_key_id == "crypto_key"
+    assert crypto_key_id == "crypto_ke"
 
 
 def test_get_update_mask():
