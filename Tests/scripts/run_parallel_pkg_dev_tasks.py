@@ -20,7 +20,6 @@ def run_dev_task(pkg_dir: str, params: Optional[List[str]], req3, req2) -> Tuple
         req = req3
     else:
         req = req2
-    print("§§§§§§§§§§§§§§{}".format(py_num))
     args = ['demisto-sdk lint', '-d', pkg_dir, '-v', '--requirements', req]
     if params:
         args.extend(params)
@@ -143,6 +142,7 @@ def main():
     pkg_dirs = find_out.splitlines()
     pkgs_to_run = []
     for dir in pkg_dirs:
+        print(dir)
         if should_run_pkg(dir):
             pkgs_to_run.append(dir)
     print("Starting parallel run for [{}] packages with [{}] max workers".format(len(pkgs_to_run), max_workers))
