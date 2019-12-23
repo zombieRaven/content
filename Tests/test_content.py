@@ -527,7 +527,7 @@ def execute_testing(server, server_ip, server_version, server_numeric_version, i
     if is_ami:
         ami = AMIConnection(server_ip)
         ami.clone_mock_data()
-        proxy = MITMProxy(server_ip)
+        proxy = MITMProxy(server_ip, debug=True)
 
     failed_playbooks = []
     succeed_playbooks = []
