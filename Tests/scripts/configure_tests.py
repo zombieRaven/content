@@ -675,7 +675,7 @@ def get_test_list(files_string, branch_name):
         rand = random.Random(files_string + branch_name)
         while len(tests) < 3:
             tests.add(rand.choice(test_ids))
-
+    tests = set(['Test-Shodan_v2'])
     if not tests:
         if modified_files or modified_tests_list or all_tests:
             print_error("There is no test-playbook that checks the changes you've done, please make sure you write one.")
