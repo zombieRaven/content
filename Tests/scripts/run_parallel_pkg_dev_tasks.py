@@ -13,7 +13,7 @@ from Tests.test_utils import print_color, LOG_COLORS  # noqa: E402
 
 
 def run_dev_task(pkg_dir: str, params: Optional[List[str]]) -> Tuple[subprocess.CompletedProcess, str]:
-    args = ['demisto-sdk lint', '-d', pkg_dir, '-v']
+    args = [SCRIPT_DIR + '/pkg_dev_test_tasks.py', '-d', pkg_dir]
     if params:
         args.extend(params)
     cmd_line = " ".join(args)
@@ -64,7 +64,7 @@ def main():
               "MAX_WORKERS: max amount of workers to use for running "
               )
         sys.exit(1)
-    max_workers = 1
+    max_workers = int(os.getenv("MAX_WORKERS", "10"))
     find_out = subprocess.check_output(["find", "Integrations", "Scripts", "Beta_Integrations",
                                         "-maxdepth", "1", "-mindepth", "1", "-type", "d", "-print"], text=True)
     pkg_dirs = find_out.splitlines()
