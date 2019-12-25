@@ -305,8 +305,6 @@ jobs:
             if ./Tests/scripts/is_ami.sh ;
               then
                 ./Tests/scripts/run_tests.sh "Demisto GA"
-                # temporarily fail this instance's tests step ensuring the instance stays up for inspection
-                exit 1
 
               else
                 ./Tests/lastest_server_build_scripts/run_tests.sh
