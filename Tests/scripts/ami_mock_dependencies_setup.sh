@@ -16,8 +16,10 @@ sudo make altinstall
 echo "Python3.8 installed."
 sudo ln -s /usr/local/bin/python3.8 /usr/bin/python3
 python3 -m pip install -U pip --user
+sudo ln -s ~/.local/bin/pip /usr/local/bin/pip
 pip install python-dateutil --user
 pip install mitmproxy --user
+export PATH="/home/ec2-user/.local/bin:$PATH"
 echo "Python 'python-dateutil' and 'mitmproxy' installed."
 echo "mitmproxy dependencies setup completed"
 echo "--------------------------------------"
