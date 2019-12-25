@@ -10,10 +10,11 @@ wget https://www.python.org/ftp/python/3.8.0/Python-3.8.0.tgz
 # disable-secrets-detection-end
 tar xzf Python-3.8.0.tgz
 cd Python-3.8.0
-./configure ––enable–optimizations
+./configure
 sudo make -j 8
 sudo make altinstall
 echo "Python3.8 installed."
+sudo ln -s /usr/local/bin/python3.8 /usr/bin/python3
 python3 -m pip install -U pip --user
 pip install python-dateutil --user
 pip install mitmproxy --user
