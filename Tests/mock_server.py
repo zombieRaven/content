@@ -248,6 +248,29 @@ class MITMProxy:
             self.ami.call(['mkdir', '--parents', dst_folder])
             self.ami.call(['mv', src_files, dst_folder])
 
+    def clean_mock_file(self, playbook_id, path=None):
+        path = path or self.current_folder
+        problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
+        problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
+        if problem_keys:
+            mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
+            # rewrite mock file with problematic keys in request bodies replaced
+            command = 'mitmdump -ns ~/timestamp_replacer.py '
+            log_file = os.path.join(path, get_log_file_path(playbook_id, record=True))
+            # Handle proxy log output
+            debug_opt = " >>{} 2>&1".format(log_file) if not self.debug else ''
+            options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
+            if options.strip():
+                command += options
+            command += ' -r {} -w {}{}'.format(mock_file_path, mock_file_path, debug_opt)
+            command = "bash --login -c '{}'".format(command)
+            split_command = command.split()
+            print('Let\'s try and clean the mockfile from timestamp data!')
+            if not call(self.ami.add_ssh_prefix(split_command, '-t')):
+                print('There may have been a problem when filtering timestamp data from the mock file.')
+            else:
+                print('Success!')
+
     def start(self, playbook_id, path=None, record=False):
         """Start the proxy process and direct traffic through it.
 
@@ -297,48 +320,12 @@ class MITMProxy:
             self.PROXY_PORT, actions, os.path.join(path, get_mock_file_path(playbook_id)), debug_opt
         ).split()
 
-        # Handle proxy log output
-        # if not self.debug:
-        #     command.extend(['>{}'.format(log_file), '2>&1'])
-
         # Start proxy server
         self.process = Popen(self.ami.add_ssh_prefix(command, "-t"), stdout=PIPE, stderr=PIPE)
         self.process.poll()
         if self.process.returncode is not None:
             raise Exception("Proxy process terminated unexpectedly.\nExit code: {}\noutputs:\nSTDOUT\n{}\n\nSTDERR\n{}"
                             .format(self.process.returncode, self.process.stdout.read(), self.process.stderr.read()))
-
-        if record:
-            problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
-            mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
-            # rewrite mock file with problematic keys in request bodies replaced
-            command = 'mitmdump -ns {} '.format(remote_script_path)
-            log_file = os.path.join(path, get_log_file_path(playbook_id, record))
-            # Handle proxy log output
-            debug_opt = " >>{} 2>&1".format(log_file) if not self.debug else ''
-            options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
-            if options.strip():
-                command += options
-            command += ' -r {} -w {}{}'.format(mock_file_path, mock_file_path, debug_opt)
-            command = "bash --login -c '{}'".format(command)
-            split_command = command.split()
-
-            # Handle proxy log output
-            # if not self.debug:
-            #     log_file = os.path.join(path, get_log_file_path(playbook_id, record))
-            #     split_command.extend(['>>{}'.format(log_file), '2>&1'])
-
-            # Do Mock File Rewrite
-            if not call(self.ami.add_ssh_prefix(split_command, '-t')):
-                print('There may have been a problem when filtering timestamp data from the mock file.')
-            # self.process = Popen(self.ami.add_ssh_prefix(split_command, "-t"), stdout=PIPE, stderr=PIPE)
-            # self.process.poll()
-            # if self.process.returncode is not None:
-            #     err_msg = 'Proxy process terminated unexpectedly.\nExit code: ' \
-            #               '{}\noutputs:\nSTDOUT\n{}\n\nSTDERR\n{}'.format(
-            #                   self.process.returncode, self.process.stdout.read(), self.process.stderr.read()
-            #               )
-            #     raise Exception(err_msg)
 
         log_file_exists = False
         seconds_since_init = 0
