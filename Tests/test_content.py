@@ -586,6 +586,7 @@ def execute_testing(server, server_ip, server_version, server_numeric_version, i
         print("Pushing new/updated mock files to mock git repo.")
         ami.upload_mock_files(build_name, build_number)
 
+    sys.exit(1)
     if len(failed_playbooks):
         print("Some tests have failed. Not destroying instances.")
         sys.exit(1)
