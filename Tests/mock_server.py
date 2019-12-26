@@ -288,16 +288,18 @@ class MITMProxy:
                 remote_script_path, options.strip()
             )
 
-        # Configure proxy server
-        command = "bash --login -c 'mitmdump --ssl-insecure --verbose --listen-port {} {}'".format(
-            self.PROXY_PORT, actions
-        ).split()
-        command.append(os.path.join(path, get_mock_file_path(playbook_id)))
-
         log_file = os.path.join(path, get_log_file_path(playbook_id, record))
         # Handle proxy log output
-        if not self.debug:
-            command.extend(['>{}'.format(log_file), '2>&1'])
+        debug_opt = " >{} 2>&1".format(log_file) if not self.debug else ''
+
+        # Configure proxy server
+        command = "bash --login -c 'mitmdump --ssl-insecure --verbose --listen-port {} {} {}{}'".format(
+            self.PROXY_PORT, actions, os.path.join(path, get_mock_file_path(playbook_id)), debug_opt
+        ).split()
+
+        # Handle proxy log output
+        # if not self.debug:
+        #     command.extend(['>{}'.format(log_file), '2>&1'])
 
         # Start proxy server
         self.process = Popen(self.ami.add_ssh_prefix(command, "-t"), stdout=PIPE, stderr=PIPE)
@@ -311,17 +313,20 @@ class MITMProxy:
             mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
             # rewrite mock file with problematic keys in request bodies replaced
             command = 'mitmdump -ns {} '.format(remote_script_path)
+            log_file = os.path.join(path, get_log_file_path(playbook_id, record))
+            # Handle proxy log output
+            debug_opt = " >>{} 2>&1".format(log_file) if not self.debug else ''
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             if options.strip():
                 command += options
-            command += ' -r {} -w {}'.format(mock_file_path, mock_file_path)
+            command += ' -r {} -w {}{}'.format(mock_file_path, mock_file_path, debug_opt)
             command = "bash --login -c '{}'".format(command)
             split_command = command.split()
 
             # Handle proxy log output
-            if not self.debug:
-                log_file = os.path.join(path, get_log_file_path(playbook_id, record))
-                split_command.extend(['>>{}'.format(log_file), '2>&1'])
+            # if not self.debug:
+            #     log_file = os.path.join(path, get_log_file_path(playbook_id, record))
+            #     split_command.extend(['>>{}'.format(log_file), '2>&1'])
 
             # Do Mock File Rewrite
             if not call(self.ami.add_ssh_prefix(split_command, '-t')):
