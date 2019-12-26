@@ -19,7 +19,11 @@ python3 -m pip install -U pip --user
 sudo ln -s ~/.local/bin/pip /usr/local/bin/pip
 pip install python-dateutil --user
 pip install mitmproxy --user
-export PATH="/home/ec2-user/.local/bin:$PATH"
+# disable-secrets-detection-start
+echo "
+export PATH=$HOME/.local/bin:$PATH" >> ~/.bash_profile
+# disable-secrets-detection-end
+source ~/.bash_profile
 echo "Python 'python-dateutil' and 'mitmproxy' installed."
 echo "mitmproxy dependencies setup completed"
 echo "--------------------------------------"
