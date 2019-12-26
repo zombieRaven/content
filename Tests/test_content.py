@@ -181,6 +181,7 @@ def run_and_record(c, proxy, failed_playbooks, integrations, playbook_id, succee
     succeed = run_test_logic(c, failed_playbooks, integrations, playbook_id, succeed_playbooks, test_message,
                              test_options, slack, circle_ci, build_number, server_url, build_name, is_mock_run=True)
     proxy.stop()
+    proxy.clean_mock_file(playbook_id)
     if succeed:
         proxy.move_mock_file_to_repo(playbook_id)
 
