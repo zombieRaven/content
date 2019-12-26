@@ -289,7 +289,9 @@ class MITMProxy:
             )
 
         # Configure proxy server
-        command = "mitmdump --ssl-insecure --verbose --listen-port {} {}".format(self.PROXY_PORT, actions).split()
+        command = "bash --login -c 'mitmdump --ssl-insecure --verbose --listen-port {} {}'".format(
+            self.PROXY_PORT, actions
+        ).split()
         command.append(os.path.join(path, get_mock_file_path(playbook_id)))
 
         log_file = os.path.join(path, get_log_file_path(playbook_id, record))
@@ -313,6 +315,7 @@ class MITMProxy:
             if options.strip():
                 command += options
             command += ' -r {} -w {}'.format(mock_file_path, mock_file_path)
+            command = "bash --login -c '{}'".format(command)
             split_command = command.split()
 
             # Handle proxy log output
