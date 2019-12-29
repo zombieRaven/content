@@ -1,6 +1,6 @@
 import os
 import json
-import signal
+# import signal
 import string
 import time
 import unicodedata
