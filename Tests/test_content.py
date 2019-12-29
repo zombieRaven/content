@@ -583,7 +583,7 @@ def execute_testing(server, server_ip, server_version, server_numeric_version, i
 
     create_result_files(failed_playbooks, skipped_integration, skipped_tests)
 
-    if is_ami and build_name == 'master':
+    if is_ami and build_name == 'mocks-enable-timestamps-in-body':
         print("Pushing new/updated mock files to mock git repo.")
         ami.upload_mock_files(build_name, build_number)
 
