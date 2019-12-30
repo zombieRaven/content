@@ -72,7 +72,7 @@ class TimestampReplacer:
                 self.modify_json_body(flow, content)
 
     def modify_json_body(self, flow: flow.Flow, json_body: dict) -> None:
-        '''Modify the json body of a request by replacing any timestampt data with the number of the current request.
+        '''Modify the json body of a request by replacing any timestamp data with the number of the current request.
 
         Args:
             flow (flow.Flow): The flow whose request body is to be modified.
