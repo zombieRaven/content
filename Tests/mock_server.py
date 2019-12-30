@@ -307,11 +307,11 @@ class MITMProxy:
         # if recording
         # record with detect_timestamps and then rewrite mock file
         if record:
-            actions = '-s {} --set detect_timestamp=true --set keys_filepath={} --save-stream-file'.format(
-                remote_script_path, problem_keys_filepath
+            actions = '-s {} --set detect_timestamps=true --set keys_filepath={} --save-stream-file'.format(
+                remote_script_path, current_problem_keys_filepath
             )
         else:
-            problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
+            problem_keys = json.loads(self.ami.check_output(['cat', repo_problem_keys_filepath]))
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             actions = '-s {} {} --server-replay-kill-extra --server-replay'.format(
                 remote_script_path, options.strip()
