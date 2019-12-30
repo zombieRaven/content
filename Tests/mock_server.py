@@ -249,9 +249,12 @@ class MITMProxy:
             self.ami.call(['mv', src_files, dst_folder])
 
     def clean_mock_file(self, playbook_id, path=None):
+        print('"clean_mock_file({})" was called'.format(playbook_id))
         path = path or self.current_folder
         problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
+        print('problem_keys_filepath: "{}"'.format(problem_keys_filepath))
         problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
+        print('problem_keys: \n{}'.format(json.dumps(problem_keys, indent=4)))
         if problem_keys:
             mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
             # rewrite mock file with problematic keys in request bodies replaced
@@ -288,10 +291,13 @@ class MITMProxy:
         silence_output(self.ami.call, ['mkdir', os.path.join(path, get_folder_path(playbook_id))], stderr='null')
 
         # if the keys file doesn't exist, create an empty one
-        problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
-        key_file_exists = ["[", "-f", problem_keys_filepath, "]"]
+        repo_problem_keys_filepath = os.path.join(self.repo_folder, get_folder_path(playbook_id), 'problematic_keys.txt')
+        print('repo_problem_keys_filepath: "{}"'.format(repo_problem_keys_filepath))
+        current_problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
+        print('current_problem_keys_filepath: "{}"'.format(current_problem_keys_filepath))
+        key_file_exists = ["[", "-f", repo_problem_keys_filepath, "]"]
         if not self.ami.call(key_file_exists) == 0:
-            self.ami.call(['echo', '"{}"', '>', problem_keys_filepath])
+            self.ami.call(['echo', '"{}"', '>', repo_problem_keys_filepath])
 
         script_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'timestamp_replacer.py')
         print('script_filepath: {}'.format(script_filepath))
@@ -318,7 +324,9 @@ class MITMProxy:
         # Configure proxy server
         command = "bash --login -c 'mitmdump --ssl-insecure --verbose --listen-port {} {} {}{}'".format(
             self.PROXY_PORT, actions, os.path.join(path, get_mock_file_path(playbook_id)), debug_opt
-        ).split()
+        )
+        print('mitm command: "{}"'.format(command))
+        command = command.split()
 
         # Start proxy server
         self.process = Popen(self.ami.add_ssh_prefix(command, "-t"), stdout=PIPE, stderr=PIPE)
