@@ -353,7 +353,7 @@ class MITMProxy:
             raise Exception("Cannot stop proxy - not running.")
 
         # self.process.send_signal(signal.SIGINT)  # Terminate proxy process
-        self.process.kill()
+        self.process.terminate()
         self.ami.call(["rm", "-rf", "/tmp/_MEI*"])  # Clean up temp files
 
         # Handle logs
