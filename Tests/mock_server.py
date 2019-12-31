@@ -1,6 +1,6 @@
 import os
 import json
-# import signal
+import signal
 import string
 import time
 import unicodedata
@@ -352,9 +352,10 @@ class MITMProxy:
         if not self.process:
             raise Exception("Cannot stop proxy - not running.")
 
-        # self.process.send_signal(signal.SIGINT)  # Terminate proxy process
+        print('proxy.stop() was called')
+        self.process.send_signal(signal.SIGINT)  # Terminate proxy process
         self.ami.call(['pgrep', 'mitmdump', '|', 'xargs', 'kill', '-SIGINT'])
-        self.process.terminate()
+        # self.process.terminate()
         self.ami.call(["rm", "-rf", "/tmp/_MEI*"])  # Clean up temp files
 
         # Handle logs
