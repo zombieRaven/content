@@ -229,8 +229,8 @@ class TimestampReplacer:
         return bad_keys
 
     def done(self):
-        ctx.log.info('timestamp_replacer.py "done()" called')
-        ctx.log.info('ctx.options: \n{}'.format(json.dumps(ctx.options, indent=4)))
+        print('timestamp_replacer.py "done()" called')
+        print('ctx.options: \n{}'.format(json.dumps(ctx.options, indent=4)))
         if ctx.options.detect_timestamps:
             bad_keys_filepath = ctx.options.keys_filepath
             all_keys = {
