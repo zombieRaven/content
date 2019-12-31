@@ -2,7 +2,7 @@
 set -e
 
 cd content-test-data
-git stash -u
+git stash save -u
 git checkout mocks-testing
 git stash pop
 git add *
