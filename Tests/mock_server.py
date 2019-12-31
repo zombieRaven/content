@@ -266,7 +266,7 @@ class MITMProxy:
             if options.strip():
                 command += options
             command += ' -r {} -w {}{}'.format(mock_file_path, mock_file_path, debug_opt)
-            command = "bash --login -c '{}'".format(command)
+            command = "source .bash_profile && {}".format(command)
             split_command = command.split()
             print('Let\'s try and clean the mockfile from timestamp data!')
             if not call(self.ami.add_ssh_prefix(split_command, '-t')):
@@ -322,7 +322,7 @@ class MITMProxy:
         debug_opt = " >{} 2>&1".format(log_file) if not self.debug else ''
 
         # Configure proxy server
-        command = "bash --login -c 'mitmdump --ssl-insecure --verbose --listen-port {} {} {}{}'".format(
+        command = "source .bash_profile && mitmdump --ssl-insecure --verbose --listen-port {} {} {}{}".format(
             self.PROXY_PORT, actions, os.path.join(path, get_mock_file_path(playbook_id)), debug_opt
         )
         print('mitm command: "{}"'.format(command))
