@@ -353,6 +353,7 @@ class MITMProxy:
             raise Exception("Cannot stop proxy - not running.")
 
         # self.process.send_signal(signal.SIGINT)  # Terminate proxy process
+        self.ami.call(['pgrep', 'mitmdump', '|', 'xargs', 'kill', '-SIGINT'])
         self.process.terminate()
         self.ami.call(["rm", "-rf", "/tmp/_MEI*"])  # Clean up temp files
 
