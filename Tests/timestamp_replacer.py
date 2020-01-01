@@ -43,6 +43,8 @@ class TimestampReplacer:
             in the same directory.
             '''
         )
+
+    def running(self):
         # need to do this because arguments for these options are interpreted as 1 list item
         query_keys = ctx.options.server_replay_ignore_params
         ctx.options.server_replay_ignore_params = query_keys[0].split() if len(query_keys) == 1 else query_keys
