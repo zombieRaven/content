@@ -301,9 +301,6 @@ class MITMProxy:
         print('repo_problem_keys_filepath: "{}"'.format(repo_problem_keys_filepath))
         current_problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
         print('current_problem_keys_filepath: "{}"'.format(current_problem_keys_filepath))
-        key_file_exists = ["[", "-f", repo_problem_keys_filepath, "]"]
-        if not self.ami.call(key_file_exists) == 0:
-            self.ami.call(['echo', '"{}"', '>', repo_problem_keys_filepath])
 
         script_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'timestamp_replacer.py')
         print('script_filepath: {}'.format(script_filepath))
@@ -317,7 +314,15 @@ class MITMProxy:
                 remote_script_path, current_problem_keys_filepath
             )
         else:
-            problem_keys = json.loads(self.ami.check_output(['cat', repo_problem_keys_filepath]))
+            key_file_exists = ["[", "-f", repo_problem_keys_filepath, "]"]
+            if not self.ami.call(key_file_exists) == 0:
+                problem_keys = {
+                    "keys_to_replace": "",
+                    "server_replay_ignore_payload_params": "",
+                    "server_replay_ignore_params": ""
+                }
+            else:
+                problem_keys = json.loads(self.ami.check_output(['cat', repo_problem_keys_filepath]))
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             actions = '-s {} {} --server-replay-kill-extra --server-replay'.format(
                 remote_script_path, options.strip()
