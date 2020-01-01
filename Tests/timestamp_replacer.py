@@ -12,6 +12,8 @@ class TimestampReplacer:
         self.json_keys = set()
         self.form_keys = set()
         self.query_keys = set()
+        self.bad_keys_filepath = ''
+        self.detect_timestamps = False
 
     def load(self, loader):
         loader.add_option(
@@ -46,6 +48,10 @@ class TimestampReplacer:
         ctx.options.server_replay_ignore_params = query_keys[0].split() if len(query_keys) == 1 else query_keys
         form_keys = ctx.options.server_replay_ignore_payload_params
         ctx.options.server_replay_ignore_payload_params = form_keys[0].split() if len(form_keys) == 1 else form_keys
+        self.bad_keys_filepath = ctx.options.keys_filepath
+        if ctx.options.detect_timestamps:
+            ctx.log.info('Detecting Timestamp Fields')
+            self.detect_timestamps = True
 
     def request(self, flow: flow.Flow) -> None:
         self.count += 1
@@ -229,16 +235,18 @@ class TimestampReplacer:
         return bad_keys
 
     def done(self):
+        # with open('file', 'w'):
+        #     pass
         print('timestamp_replacer.py "done()" called')
-        print('ctx.options: \n{}'.format(json.dumps(ctx.options, indent=4)))
-        if ctx.options.detect_timestamps:
-            bad_keys_filepath = ctx.options.keys_filepath
+        # print('ctx.options: \n{}'.format(json.dumps(ctx.options, indent=4)))
+        if self.detect_timestamps:
+            # bad_keys_filepath = ctx.options.keys_filepath
             all_keys = {
                 'keys_to_replace': ' '.join(self.json_keys),
                 'server_replay_ignore_payload_params': ' '.join(self.form_keys),
                 'server_replay_ignore_params': ' '.join(self.query_keys)
             }
-            with open(bad_keys_filepath, 'w') as bad_keys_file:
+            with open(self.bad_keys_filepath, 'w') as bad_keys_file:
                 bad_keys_file.write(json.dumps(all_keys))
 
 
