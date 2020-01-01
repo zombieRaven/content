@@ -257,6 +257,7 @@ class MITMProxy:
         print('problem_keys: \n{}'.format(json.dumps(problem_keys, indent=4)))
         if problem_keys:
             mock_file_path = os.path.join(path, get_mock_file_path(playbook_id))
+            cleaned_mock_filepath = mock_file_path.strip('.mock') + '_cleaned.mock'
             # rewrite mock file with problematic keys in request bodies replaced
             command = 'mitmdump -ns ~/timestamp_replacer.py '
             log_file = os.path.join(path, get_log_file_path(playbook_id, record=True))
@@ -265,7 +266,7 @@ class MITMProxy:
             options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
             if options.strip():
                 command += options
-            command += ' -r {} -w {}{}'.format(mock_file_path, mock_file_path, debug_opt)
+            command += ' -r {} -w {}{}'.format(mock_file_path, cleaned_mock_filepath, debug_opt)
             command = "source .bash_profile && {}".format(command)
             split_command = command.split()
             print('Let\'s try and clean the mockfile from timestamp data!')
@@ -273,6 +274,11 @@ class MITMProxy:
                 print('There may have been a problem when filtering timestamp data from the mock file.')
             else:
                 print('Success!')
+            print('Replace old mock with cleaned one.')
+            rm_cmd = 'rm {}'.format(mock_file_path)
+            self.ami.call(rm_cmd.split())
+            mv_cmd = 'mv {} {}'.format(cleaned_mock_filepath, mock_file_path)
+            self.ami.call(mv_cmd.split())
 
     def start(self, playbook_id, path=None, record=False):
         """Start the proxy process and direct traffic through it.
@@ -354,8 +360,8 @@ class MITMProxy:
 
         print('proxy.stop() was called')
         print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"']))
-        kill_cmd = ['ps', '-aux', '|', 'grep', '"mitmdump"', '|', 'cut', '-d\' \'', '-f2', '|', 'xargs', 'kill', '-2']
-        silence_output(self.ami.call, kill_cmd, stderr='null')
+        kill_cmd = 'ps -aux | grep "mitmdump" | cut -d\' \' -f2 | xargs kill -2'
+        self.ami.call(kill_cmd.split())
         print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"']))
         self.process.send_signal(signal.SIGINT)  # Terminate proxy process
         # self.process.terminate()
