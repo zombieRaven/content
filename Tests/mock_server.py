@@ -354,7 +354,8 @@ class MITMProxy:
 
         print('proxy.stop() was called')
         print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"']))
-        print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"', '|', 'cut', '-d\' \'', '-f2', '|', 'xargs', 'kill', '-2']))
+        kill_cmd = ['ps', '-aux', '|', 'grep', '"mitmdump"', '|', 'cut', '-d\' \'', '-f2', '|', 'xargs', 'kill', '-2']
+        silence_output(self.ami.call, kill_cmd, stderr='null')
         print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"']))
         self.process.send_signal(signal.SIGINT)  # Terminate proxy process
         # self.process.terminate()
