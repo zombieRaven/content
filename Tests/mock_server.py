@@ -364,12 +364,24 @@ class MITMProxy:
             raise Exception("Cannot stop proxy - not running.")
 
         print('proxy.stop() was called')
-        print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"']))
-        kill_cmd = 'ps -aux | grep "mitmdump" | cut -d\' \' -f2 | xargs kill -2'
-        self.ami.call(kill_cmd.split())
-        print(self.ami.check_output(['ps', '-aux', '|', 'grep', '"mitmdump"']))
+
+        poll_time = 0
+        poll_interval = 1
+        poll_time_limit = 5
+
+        show_running_mitmdump_processes = ['ps', '-aux', '|', 'grep', '"mitmdump"', '|', 'grep', '-v', '"grep"']
+        print(self.ami.check_output(show_running_mitmdump_processes))
+        mitmdump_still_running = self.ami.call(show_running_mitmdump_processes) == 0
+
+        kill_cmd = 'ps -aux | grep "mitmdump.*timestamp_replacer.py" | grep -v "mitmdump\.\*timestamp_replacer\.py"' \
+                   ' | cut -d\' \' -f2 | xargs kill -2'
+        while mitmdump_still_running and poll_time < poll_time_limit:
+            self.ami.call(kill_cmd.split())
+            mitmdump_still_running = self.ami.call(show_running_mitmdump_processes) == 0
+            time.sleep(poll_interval)
+            poll_time += poll_interval
+
         self.process.send_signal(signal.SIGINT)  # Terminate proxy process
-        # self.process.terminate()
         self.ami.call(["rm", "-rf", "/tmp/_MEI*"])  # Clean up temp files
 
         # Handle logs
