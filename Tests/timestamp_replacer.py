@@ -9,6 +9,7 @@ from dateutil.parser import parse
 class TimestampReplacer:
     def __init__(self):
         self.count = 0
+        self.constant = 'constant_value'
         self.json_keys = set()
         self.form_keys = set()
         self.query_keys = set()
@@ -113,11 +114,13 @@ class TimestampReplacer:
             if not skip_key:
                 if lastkey in body:
                     ctx.log.info('modifying request to "{}"'.format(flow.request.pretty_url))
-                    body[lastkey] = self.count
+                    # body[lastkey] = self.count
+                    body[lastkey] = self.constant
                     modified = True
                 elif isinstance(body, list) and lastkey.isdigit() and int(lastkey) <= len(body) - 1:
                     ctx.log.info('modifying request to "{}"'.format(flow.request.pretty_url))
-                    body[int(lastkey)] = self.count
+                    # body[int(lastkey)] = self.count
+                    body[int(lastkey)] = self.constant
                     modified = True
         if modified:
             ctx.log.info('original request body:\n{}'.format(json.dumps(original_content, indent=4)))
