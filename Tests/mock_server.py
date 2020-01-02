@@ -6,7 +6,7 @@ import time
 import unicodedata
 import urllib3
 import demisto_client.demisto_api
-from subprocess import call, Popen, PIPE, check_call, check_output
+from subprocess import call, Popen, PIPE, check_call, check_output, CalledProcessError
 
 VALID_FILENAME_CHARS = '-_.() %s%s' % (string.ascii_letters, string.digits)
 PROXY_PROCESS_INIT_TIMEOUT = 20
@@ -370,7 +370,13 @@ class MITMProxy:
         poll_time_limit = 5
 
         show_running_mitmdump_processes = ['ps', '-aux', '|', 'grep', '"mitmdump"', '|', 'grep', '-v', '"grep"']
-        print(self.ami.check_output(show_running_mitmdump_processes))
+        try:
+            print(self.ami.check_output(show_running_mitmdump_processes))
+        except CalledProcessError as e:
+            err_msg = 'command `{}` exited with return code [{}]'.format(' '.join(show_running_mitmdump_processes),
+                                                                         e.returncode)
+            err_msg = '{} and the output of "{}"'.format(err_msg, e.output) if e.output else err_msg
+            print(err_msg)
         mitmdump_still_running = self.ami.call(show_running_mitmdump_processes) == 0
 
         kill_cmd = 'ps -aux | grep "mitmdump.*timestamp_replacer.py" | grep -v "mitmdump\.\*timestamp_replacer\.py"' \
