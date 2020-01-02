@@ -253,6 +253,12 @@ class MITMProxy:
         path = path or self.current_folder
         problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
         print('problem_keys_filepath: "{}"'.format(problem_keys_filepath))
+        problem_key_file_exists = ["[", "-f", problem_keys_filepath, "]"]
+        if not self.ami.call(problem_key_file_exists) == 0:
+            err_msg = 'Error: The problematic_keys.txt file was not written to the file path' \
+                      ' "{}" when recording the "{}" test playbook'.format(problem_keys_filepath, playbook_id)
+            print(err_msg)
+            return
         problem_keys = json.loads(self.ami.check_output(['cat', problem_keys_filepath]))
         print('problem_keys: \n{}'.format(json.dumps(problem_keys, indent=4)))
         if problem_keys:
@@ -367,7 +373,7 @@ class MITMProxy:
 
         poll_time = 0
         poll_interval = 1
-        poll_time_limit = 5
+        poll_time_limit = 10
 
         show_running_mitmdump_processes = ['ps', '-aux', '|', 'grep', '"mitmdump"', '|', 'grep', '-v', '"grep"']
         try:
@@ -383,7 +389,10 @@ class MITMProxy:
                    ' | cut -d\' \' -f2 | xargs kill -2'
         while mitmdump_still_running and poll_time < poll_time_limit:
             self.ami.call(kill_cmd.split())
-            mitmdump_still_running = self.ami.call(show_running_mitmdump_processes) == 0
+            try:
+                mitmdump_still_running = silence_output(self.ami.call, show_running_mitmdump_processes, stdout='null') == 0
+            except CalledProcessError as e:
+                mitmdump_still_running = e.returncode == 0
             time.sleep(poll_interval)
             poll_time += poll_interval
 
