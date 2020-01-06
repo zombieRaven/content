@@ -524,6 +524,15 @@ def execute_testing(server, server_ip, server_version, server_numeric_version, i
         print('no integrations are configured for test')
         return
 
+    # turn off telemetry on the AMI instance
+    client = demisto_client.configure(base_url=server, api_key=demisto_api_key, verify_ssl=False)
+    body, status_code, headers = demisto_client.generic_request_func(self=client, method='POST',
+                                                                     path='/telemetry?status=notelemetry')
+
+    if status_code != 200:
+        print_error('Request to turn off telemetry failed with status code "{}"\n{}'.format(status_code, body))
+        sys.exit(1)
+
     proxy = None
     if is_ami:
         ami = AMIConnection(server_ip)
@@ -578,8 +587,11 @@ def execute_testing(server, server_ip, server_version, server_numeric_version, i
                           unmockable_integrations, succeed_playbooks, slack, circle_ci, build_number, server,
                           build_name, server_numeric_version, demisto_api_key, is_ami)
 
-    print_test_summary(succeed_playbooks, failed_playbooks, skipped_tests, skipped_integration, unmockable_integrations,
-                       proxy, is_ami)
+    with open('./artifacts/test_summary.md', 'w') as test_summary:
+        sys.stdout = test_summary
+        print_test_summary(succeed_playbooks, failed_playbooks, skipped_tests, skipped_integration,
+                           unmockable_integrations, proxy, is_ami)
+        sys.stdout = sys.__stdout__
 
     create_result_files(failed_playbooks, skipped_integration, skipped_tests)
 
