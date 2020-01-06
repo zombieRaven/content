@@ -587,7 +587,8 @@ def execute_testing(server, server_ip, server_version, server_numeric_version, i
                           unmockable_integrations, succeed_playbooks, slack, circle_ci, build_number, server,
                           build_name, server_numeric_version, demisto_api_key, is_ami)
 
-    with open('./artifacts/test_summary.md', 'w') as test_summary:
+    server_version = options.serverVersion.replace(' ', '_').lower()
+    with open('./artifacts/test_{}_summary.txt'.format(server_version), 'w') as test_summary:
         sys.stdout = test_summary
         print_test_summary(succeed_playbooks, failed_playbooks, skipped_tests, skipped_integration,
                            unmockable_integrations, proxy, is_ami)
