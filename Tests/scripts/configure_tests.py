@@ -731,6 +731,18 @@ if __name__ == "__main__":
 
     # Create test file based only on committed files
     create_test_file(options.nightly, options.skip_save)
+    # disable-secrets-detection-start
+    print("Rewrite filter_file.txt to use tests that rerecorded in recent nightly build")
+    tests = 'ThreatX-test\nrsa_packets_and_logs_test\nACM-Test\nCanaryTools Test\nhashicorp_test\nWildfire Test' \
+            '\nDetonate URL - WildFire-v2 - Test\nAlexa Test Playbook\nSNDBOX_Test\nTenable.io test\nRTIR Test\n' \
+            'devo_test_playbook\nBigFixTest\nTest Playbook McAfee ATD\nSplunk-Test\nSplunkPySearch_Test\n' \
+            'urlscan_malicious_Test\nCylance Protect v2 Test\nCybereason Test\nvirusTotalPrivateAPI-test-playbook\n' \
+            'Symantec Messaging Gateway Test\ntest_Qradar\nFireEye HX Test\nRSA NetWitness Test\n' \
+            'Calculate Severity - Standard - Test\nLogRhythm REST test\nQRadar Indicator Hunting Test'
+    # disable-secrets-detection-end
+    with open("./Tests/filter_file.txt", "w") as filter_file:
+        filter_file.write(tests)
+
     if not _FAILED:
         print_color("Finished test configuration", LOG_COLORS.GREEN)
         sys.exit(0)
