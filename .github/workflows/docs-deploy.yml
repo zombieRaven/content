@@ -1,0 +1,17 @@
+name: Docs Deploy
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump Github context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+          TEST: ${{ secrets.TEST_SECRET }}
+        run: |
+          echo "$GITHUB_CONTEXT"
+          echo "TEST: $TEST"
+  
