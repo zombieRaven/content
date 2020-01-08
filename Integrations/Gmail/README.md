@@ -243,10 +243,6 @@
   in the War Room with the command details.
 </p>
 <ol>
-  <ol>
-    <ol>
-      <ol>
-        <ol>
           <li>
             <a href="#h_b0254633-137e-4270-a589-a3b35fdd5bdb" target="_self">Delete a user: gmail-delete-user</a>
           </li>
@@ -331,10 +327,6 @@
           <li>
             <a href="#h_426da8de-404c-432d-9080-b476cf896g9a" target="_self">Get details of a specific role: gmail-get-role</a>
           </li>
-        </ol>
-      </ol>
-    </ol>
-  </ol>
 </ol>
 <h3 id="h_b0254633-137e-4270-a589-a3b35fdd5bdb">1. Delete a user</h3>
 <hr>
