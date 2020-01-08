@@ -1,12 +1,13 @@
 name: Docs Deploy
 on: 
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v1
       - name: Dump Github context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -18,3 +19,10 @@ jobs:
           else
             echo "no secret"
           fi
+      - name: Deploy Docs
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          echo "comparing before: $BEFORE to $AFTER"
+          git diff --name-only $BEFORE...$AFTER
