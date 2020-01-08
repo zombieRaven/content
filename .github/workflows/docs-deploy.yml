@@ -13,7 +13,7 @@ jobs:
           TEST: ${{ secrets.TEST_SECRET }}
         run: |
           echo "$GITHUB_CONTEXT"
-          if [[ "$TEST" == "TEST*" ]]; then
+          if [[ "$TEST" == TEST* ]]; then
             echo "secret is present"
           else
             echo "no secret"
