@@ -30,3 +30,5 @@ jobs:
           git rev-parse --abbrev-ref HEAD
           echo "remotes: "
           git remote -v
+          echo "git log"
+          git log --stat --max-count=10 
