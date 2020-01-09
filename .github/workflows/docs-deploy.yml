@@ -7,7 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - run: ls -lR      
       - name: Dump Github context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -19,6 +19,7 @@ jobs:
           else
             echo "no secret"
           fi
+      - uses: actions/checkout@v1
       - name: Deploy Docs
         env:
           BEFORE: ${{ github.event.before }}
