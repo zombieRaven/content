@@ -26,3 +26,7 @@ jobs:
         run: |
           echo "comparing before: $BEFORE to $AFTER"
           git diff --name-only $BEFORE...$AFTER
+          echo "HEAD:"
+          git rev-parse --abbrev-ref HEAD
+          echo "remotes: "
+          git remote -v
