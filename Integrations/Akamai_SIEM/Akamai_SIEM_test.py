@@ -6,12 +6,14 @@ import json
 # 3-rd party packages
 import pytest
 from freezegun import freeze_time
+import numpy as np
 
 # Local imports
 from CommonServerPython import urljoin
 
 """Helper functions and fixrtures"""
 BASE_URL = urljoin('https://akab-hnanog6ge5or6biz-ukavvo4zvqliqhlw.cloudsecurity.akamaiapis.net', '/siem/v1/configs')
+a = np.arange(15).reshape(3, 5)
 
 
 def load_params_from_json(json_path, type=''):
