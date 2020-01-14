@@ -13,7 +13,6 @@ from CommonServerPython import urljoin
 
 """Helper functions and fixrtures"""
 BASE_URL = urljoin('https://akab-hnanog6ge5or6biz-ukavvo4zvqliqhlw.cloudsecurity.akamaiapis.net', '/siem/v1/configs')
-a = np.arange(15).reshape(3, 5)
 
 
 def load_params_from_json(json_path, type=''):
@@ -42,6 +41,7 @@ class TestCommandsFunctions:
     def test_fetch_incidents_command_1(self, client, datadir, requests_mock):
         """Test - No last time exsits and event available"""
         from Akamai_SIEM import fetch_incidents_command
+        a = np.arange(15).reshape(3, 5)
         requests_mock.get(f'{BASE_URL}/50170?limit=5&from=1575966002',
                           text=datadir['sec_events.txt'].open('r').read())
         tested_incidents, tested_last_run = fetch_incidents_command(client=client,
