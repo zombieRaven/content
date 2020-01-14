@@ -1,5 +1,5 @@
 flake8==3.7.8
-git+https://github.com/demisto/demisto-py.git@UnifyFix
+git+https://github.com/demisto/demisto-sdk.git@UnifyFix
 demisto-py==2.0.6
 pytest==5.2.1
 pytest-mock==1.11.1
