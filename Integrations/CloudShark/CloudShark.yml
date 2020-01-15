@@ -1,0 +1,77 @@
+commonfields:
+  id: CloudShark
+  version: -1
+name: CloudShark
+display: CloudShark
+category: Data Enrichment & Threat Intelligence
+description: Upload, share, and collaborate on network packet capture files using your on-premises CS Enterprise system.
+configuration:
+- display: CS Enterprise URL
+  name: url
+  defaultvalue: ""
+  type: 0
+  required: true
+- display: API Token
+  name: apikey
+  defaultvalue: ""
+  type: 4
+  required: true
+- display: Use system proxy settings
+  name: proxy
+  defaultvalue: "false"
+  type: 8
+  required: false
+- display: Check the TLS certificate of the server
+  name: check_certificate
+  defaultvalue: "true"
+  type: 8
+  required: false
+script:
+  script: ''
+  type: python
+  commands:
+  - name: cloudshark-delete
+    arguments:
+    - name: capture_id
+      description: Capture ID of the capture in CS Enterprise
+    outputs:
+    - contextPath: CloudShark.Result
+      description: Result of the delete command
+    description: Delete a capture file from CS Enterprise
+  - name: cloudshark-download
+    arguments:
+    - name: capture_id
+      description: Capture ID of the capture in CS Enterprise
+    outputs:
+    - contextPath: File
+      description: The file downloaded from CS Enterprise
+    description: Download a capture file from CS Enterprise
+  - name: cloudshark-info
+    arguments:
+    - name: capture_id
+      required: true
+      description: Capture ID of the capture in CS Enterprise
+    outputs:
+    - contextPath: CloudShark.CaptureInfo
+      description: Meta-information for a capture file
+    description: Retrieve meta-information about a capture file from CS Enterprise
+  - name: cloudshark-upload
+    arguments:
+    - name: file
+      required: true
+      description: EntryID of the network capture file to upload
+    - name: additional_tags
+      description: A comma-separated list of tags to apply to the capture file
+    - name: filename
+      description: The filename of the capture in CS Enterprise
+    outputs:
+    - contextPath: URL.Data
+      description: URL of the capture file in CS Enterprise
+      type: string
+    - contextPath: CloudShark.CaptureId
+      description: Capture ID of the capture in CS Enterprise
+      type: string
+    description: Upload a capture file into CS Enterprise
+  dockerimage: demisto/python3:3.7.3.286
+  runonce: false
+  subtype: python3
