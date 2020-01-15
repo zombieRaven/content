@@ -21,9 +21,9 @@ configuration:
   defaultvalue: "false"
   type: 8
   required: false
-- display: Check the TLS certificate of the server
-  name: check_certificate
-  defaultvalue: "true"
+- display: Trust any certificate (not secure)
+  name: insecure
+  defaultvalue: "false"
   type: 8
   required: false
 script:
@@ -52,8 +52,62 @@ script:
       required: true
       description: Capture ID of the capture in CS Enterprise
     outputs:
-    - contextPath: CloudShark.CaptureInfo
-      description: Meta-information for a capture file
+    - contextPath: CloudShark.CaptureInfo.CaptureID
+      description: Capture ID
+      type: string
+    - contextPath: CloudShark.CaptureInfo.GroupWrite
+      type: boolean
+    - contextPath: CloudShark.CaptureInfo.Size
+      type: number
+    - contextPath: CloudShark.CaptureInfo.DataByteRate
+      type: string
+    - contextPath: CloudShark.CaptureInfo.TagList
+      type: string
+    - contextPath: CloudShark.CaptureInfo.DataBitRate
+      type: string
+    - contextPath: CloudShark.CaptureInfo.FileName
+      type: string
+    - contextPath: CloudShark.CaptureInfo.SHA1
+      type: string
+    - contextPath: CloudShark.CaptureInfo.AvgPacketRate
+      type: string
+    - contextPath: CloudShark.CaptureInfo.StartTime
+      type: date
+    - contextPath: CloudShark.CaptureInfo.CreatedAt
+      type: date
+    - contextPath: CloudShark.CaptureInfo.AvgPacketSize
+      type: string
+    - contextPath: CloudShark.CaptureInfo.User
+      type: string
+    - contextPath: CloudShark.CaptureInfo.LastAccessed
+      type: date
+    - contextPath: CloudShark.CaptureInfo.DisableAutodelete
+      type: boolean
+    - contextPath: CloudShark.CaptureInfo.CapFileID
+      type: number
+    - contextPath: CloudShark.CaptureInfo.EndTime
+      type: date
+    - contextPath: CloudShark.CaptureInfo.NumPackets
+      type: number
+    - contextPath: CloudShark.CaptureInfo.Encapsulation
+      type: string
+    - contextPath: CloudShark.CaptureInfo.Duration
+      type: string
+    - contextPath: CloudShark.CaptureInfo.Comments
+      type: string
+    - contextPath: CloudShark.CaptureInfo.Public
+      type: boolean
+    - contextPath: CloudShark.CaptureInfo.DataSize
+      type: number
+    - contextPath: CloudShark.CaptureInfo.File
+    - contextPath: CloudShark.CaptureInfo.FileType
+      type: string
+    - contextPath: CloudShark.CaptureInfo.FileSource
+      type: string
+    - contextPath: CloudShark.CaptureInfo.Truncated
+      type: string
+    - contextPath: CloudShark.CaptureInfo.Group
+      type: string
     description: Retrieve meta-information about a capture file from CS Enterprise
   - name: cloudshark-upload
     arguments:
@@ -68,7 +122,7 @@ script:
     - contextPath: URL.Data
       description: URL of the capture file in CS Enterprise
       type: string
-    - contextPath: CloudShark.CaptureId
+    - contextPath: CloudShark.CaptureID
       description: Capture ID of the capture in CS Enterprise
       type: string
     description: Upload a capture file into CS Enterprise
