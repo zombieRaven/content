@@ -100,6 +100,7 @@ script:
     - contextPath: CloudShark.CaptureInfo.DataSize
       type: number
     - contextPath: CloudShark.CaptureInfo.File
+      type: string
     - contextPath: CloudShark.CaptureInfo.FileType
       type: string
     - contextPath: CloudShark.CaptureInfo.FileSource
