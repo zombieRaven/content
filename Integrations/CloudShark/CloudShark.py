@@ -62,7 +62,8 @@ def parse_error_response(http_response):
     try:
         response = http_response.json()
     except ValueError:
-        return f'Error in API call. Recived status code: {http_response.status_code}; Reason: {http_response.reason}; contents: {http_response.content}'
+        return f'Error in API call. Recived status code: {http_response.status_code};' \
+            f' Reason: {http_response.reason}; contents: {http_response.content}'
     exceptions = response.get('exceptions', '')
     if exceptions:
         return f'Call Failed. status code:{http_response.status_code}, reason: {exceptions}'
