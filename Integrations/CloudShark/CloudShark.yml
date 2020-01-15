@@ -130,3 +130,5 @@ script:
   dockerimage: demisto/python3:3.7.3.286
   runonce: false
   subtype: python3
+tests:
+- Cloudshark-Test
