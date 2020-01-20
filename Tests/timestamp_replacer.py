@@ -38,7 +38,7 @@ class TimestampReplacer:
         loader.add_option(
             name='keys_filepath',
             typespec=str,
-            default='bad_keys.txt',
+            default='problematic_keys.json',  # disable-secrets-detection
             help='''
             The path to the file that contains the problematic keys for the test playbook recording that resides
             in the same directory.
