@@ -75,7 +75,7 @@ class TimestampReplacer:
                     self.handle_urlencoded_form(flow)
                 elif json_data:
                     ctx.log.info('req num: {}\n{}'.format(self.count, content))
-                    for problem_key in self.get_problematic_keys(content):
+                    for problem_key in self.determine_problematic_keys(content):
                         self.json_keys.add(problem_key)
             elif json_data:
                 self.modify_json_body(flow, content)
@@ -169,7 +169,7 @@ class TimestampReplacer:
                 except ValueError:
                     pass
 
-    def get_problematic_keys(self, content: dict) -> List[str]:
+    def determine_problematic_keys(self, content: dict) -> List[str]:
         '''Given a json request body, return the keys (in dot notation) whose values are potentially timestamp data.
 
         Args:
