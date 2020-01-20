@@ -251,11 +251,11 @@ class MITMProxy:
     def clean_mock_file(self, playbook_id, path=None):
         print('"clean_mock_file({})" was called'.format(playbook_id))
         path = path or self.current_folder
-        problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
+        problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.json')
         print('problem_keys_filepath: "{}"'.format(problem_keys_filepath))
         problem_key_file_exists = ["[", "-f", problem_keys_filepath, "]"]
         if not self.ami.call(problem_key_file_exists) == 0:
-            err_msg = 'Error: The problematic_keys.txt file was not written to the file path' \
+            err_msg = 'Error: The problematic_keys.json file was not written to the file path' \
                       ' "{}" when recording the "{}" test playbook'.format(problem_keys_filepath, playbook_id)
             print(err_msg)
             return
@@ -303,9 +303,9 @@ class MITMProxy:
         silence_output(self.ami.call, ['mkdir', os.path.join(path, get_folder_path(playbook_id))], stderr='null')
 
         # if the keys file doesn't exist, create an empty one
-        repo_problem_keys_filepath = os.path.join(self.repo_folder, get_folder_path(playbook_id), 'problematic_keys.txt')
+        repo_problem_keys_filepath = os.path.join(self.repo_folder, get_folder_path(playbook_id), 'problematic_keys.json')
         print('repo_problem_keys_filepath: "{}"'.format(repo_problem_keys_filepath))
-        current_problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.txt')
+        current_problem_keys_filepath = os.path.join(path, get_folder_path(playbook_id), 'problematic_keys.json')
         print('current_problem_keys_filepath: "{}"'.format(current_problem_keys_filepath))
 
         script_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'timestamp_replacer.py')
