@@ -320,18 +320,19 @@ class MITMProxy:
                 remote_script_path, current_problem_keys_filepath
             )
         else:
-            key_file_exists = ["[", "-f", repo_problem_keys_filepath, "]"]
-            if not self.ami.call(key_file_exists) == 0:
-                problem_keys = {
-                    "keys_to_replace": "",
-                    "server_replay_ignore_payload_params": "",
-                    "server_replay_ignore_params": ""
-                }
-            else:
-                problem_keys = json.loads(self.ami.check_output(['cat', repo_problem_keys_filepath]))
-            options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
-            actions = '-s {} {} --server-replay-kill-extra --server-replay'.format(
-                remote_script_path, options.strip()
+            # key_file_exists = ["[", "-f", repo_problem_keys_filepath, "]"]
+            # if not self.ami.call(key_file_exists) == 0:
+            #     problem_keys = {
+            #         "keys_to_replace": "",
+            #         "server_replay_ignore_payload_params": "",
+            #         "server_replay_ignore_params": ""
+            #     }
+            # else:
+            #     problem_keys = json.loads(self.ami.check_output(['cat', repo_problem_keys_filepath]))
+            # options = ' '.join(['--set {}="{}"'.format(key, val) for key, val in problem_keys.items() if val])
+            actions = '-s {} --set keys_filepath={} --server-replay-kill-extra --server-replay'.format(
+                # remote_script_path, options.strip()
+                remote_script_path, repo_problem_keys_filepath
             )
 
         log_file = os.path.join(path, get_log_file_path(playbook_id, record))
