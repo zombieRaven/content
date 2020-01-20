@@ -257,7 +257,7 @@ class TimestampReplacer:
             )
             ctx.log.info(log_msg)
 
-            problem_keys = json.loads(self.bad_keys_filepath)
+            problem_keys = json.load(self.bad_keys_filepath)
             # ctx.options.set(problem_keys.items())
 
             # need to do this because arguments for these options are interpreted as 1 list item
