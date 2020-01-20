@@ -1,4 +1,5 @@
 import json
+from os import path
 from copy import deepcopy
 from typing import List, Union
 from mitmproxy import ctx, flow
@@ -46,15 +47,18 @@ class TimestampReplacer:
         )
 
     def running(self):
-        # need to do this because arguments for these options are interpreted as 1 list item
-        query_keys = ctx.options.server_replay_ignore_params
-        ctx.options.server_replay_ignore_params = query_keys[0].split() if len(query_keys) == 1 else query_keys
-        form_keys = ctx.options.server_replay_ignore_payload_params
-        ctx.options.server_replay_ignore_payload_params = form_keys[0].split() if len(form_keys) == 1 else form_keys
+        # # need to do this because arguments for these options are interpreted as 1 list item
+        # query_keys = ctx.options.server_replay_ignore_params
+        # ctx.options.server_replay_ignore_params = query_keys[0].split() if len(query_keys) == 1 else query_keys
+        # form_keys = ctx.options.server_replay_ignore_payload_params
+        # ctx.options.server_replay_ignore_payload_params = form_keys[0].split() if len(form_keys) == 1 else form_keys
+
         self.bad_keys_filepath = ctx.options.keys_filepath
         if ctx.options.detect_timestamps:
             ctx.log.info('Detecting Timestamp Fields')
             self.detect_timestamps = True
+        else:
+            self.load_problematic_keys()
 
     def request(self, flow: flow.Flow) -> None:
         self.count += 1
@@ -239,9 +243,35 @@ class TimestampReplacer:
         bad_keys = travel_dict(content)
         return bad_keys
 
+    def load_problematic_keys(self):
+        '''Load problematic keys from the keys_filepath argument filepath if it exists. Only necessary when running
+        mitmdump in playback mode. Resets command line options with the key value pairs from the loaded dictionary.
+        '''
+        ctx.log.info('executing "load_problematic_keys" method')
+        if path.exists(self.bad_keys_filepath):
+            ctx.log.info('"{}" path exists - loading bad keys'.format(self.bad_keys_filepath))
+            ctx.log.info('options pre update: \n{}'.format(json.dumps(ctx.options, indent=4)))
+
+            problem_keys = json.loads(self.bad_keys_filepath)
+            # ctx.options.set(problem_keys.items())
+
+            # need to do this because arguments for these options are interpreted as 1 list item
+            query_keys = problem_keys.get('server_replay_ignore_params')
+            ctx.options.server_replay_ignore_params = query_keys.split() if isinstance(query_keys, str) else query_keys
+            form_keys = problem_keys.get('server_replay_ignore_payload_params')
+            ctx.options.server_replay_ignore_payload_params = (
+                form_keys.split() if isinstance(form_keys, str) else form_keys
+            )
+            keys_to_replace = problem_keys.get('keys_to_replace')
+            ctx.options.keys_to_replace = (
+                keys_to_replace.split() if isinstance(keys_to_replace, str) else keys_to_replace
+            )
+
+            ctx.log.info('options post update: \n{}'.format(json.dumps(ctx.options, indent=4)))
+        else:
+            ctx.log.info('"{}" path doesn\'t exist - no bad keys to set'.format(self.bad_keys_filepath))
+
     def done(self):
-        # with open('file', 'w'):
-        #     pass
         print('timestamp_replacer.py "done()" called')
         # print('ctx.options: \n{}'.format(json.dumps(ctx.options, indent=4)))
         if self.detect_timestamps:
