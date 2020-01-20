@@ -250,10 +250,10 @@ class TimestampReplacer:
         ctx.log.info('executing "load_problematic_keys" method')
         if path.exists(self.bad_keys_filepath):
             ctx.log.info('"{}" path exists - loading bad keys'.format(self.bad_keys_filepath))
-            log_msg = (
-                'options pre update: \nkeys_to_replace: {}'.format(ctx.options.keys_to_replace)
-                '\nserver_replay_ignore_params: {}'.format(ctx.options.server_replay_ignore_params)
-                '\nserver_replay_ignore_payload_params: {}'.format(ctx.options.server_replay_ignore_payload_params)
+            log_msg = 'options pre update: \nkeys_to_replace: {}'.format(ctx.options.keys_to_replace)
+            log_msg += '\nserver_replay_ignore_params: {}'.format(ctx.options.server_replay_ignore_params)
+            log_msg += '\nserver_replay_ignore_payload_params: {}'.format(
+                ctx.options.server_replay_ignore_payload_params
             )
             ctx.log.info(log_msg)
 
@@ -271,11 +271,11 @@ class TimestampReplacer:
             ctx.options.keys_to_replace = (
                 keys_to_replace.split() if isinstance(keys_to_replace, str) else keys_to_replace
             )
-            
-            log_msg = (
-                'options post update: \nkeys_to_replace: {}'.format(ctx.options.keys_to_replace)
-                '\nserver_replay_ignore_params: {}'.format(ctx.options.server_replay_ignore_params)
-                '\nserver_replay_ignore_payload_params: {}'.format(ctx.options.server_replay_ignore_payload_params)
+
+            log_msg = 'options post update: \nkeys_to_replace: {}'.format(ctx.options.keys_to_replace)
+            log_msg += '\nserver_replay_ignore_params: {}'.format(ctx.options.server_replay_ignore_params)
+            log_msg += '\nserver_replay_ignore_payload_params: {}'.format(
+                ctx.options.server_replay_ignore_payload_params
             )
             ctx.log.info(log_msg)
         else:
