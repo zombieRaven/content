@@ -409,6 +409,30 @@ def vulndb_get_version_command():
     vulndb_product_results_to_demisto_results(res)
 
 
+def vulndb_get_cve():
+    cve_id = demisto.args()['cve_id']
+    max_size = demisto.args().get('max_size')
+
+    res = http_request(f'{API_URL}/vulnerabilities/{cve_id}/find_by_cve_id', max_size)
+    if 'error' in res:
+        return_error(res['error'])
+    results = res.get("results")
+    if not results:
+        return_error('Could not find "results" in the returned JSON')
+    result = results[0]
+    cvss_metrics_details = result.get("cvss_metrics", [])
+    data = {
+        "ID": cve_id,
+        "CVSS": cvss_metrics_details[0].get("score", "0") if cvss_metrics_details else "0",
+        "Published": result.get('vulndb_published_date', '').rstrip('Z'),
+        "Modified": result.get('vulndb_last_modified', '').rstrip('Z'),
+        "Description": result.get("description", '')
+    }
+    human_readable = tableToMarkdown(f'Result for CVE ID: {cve_id}', data)
+    ec = {'CVE(val.ID === obj.ID)': data}
+    return_outputs(human_readable, outputs=ec, raw_response=res)
+
+
 ''' COMMANDS MANAGER / SWITCH PANEL '''
 
 LOG('Command being called is %s' % (demisto.command()))
@@ -437,3 +461,5 @@ elif demisto.command() == 'vulndb-get-version':
     vulndb_get_version_command()
 elif demisto.command() == 'vulndb-get-updates-by-dates-or-hours':
     vulndb_get_updates_by_dates_or_hours_command()
+elif demisto.command() == 'cve':
+    vulndb_get_cve()
