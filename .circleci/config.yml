@@ -379,10 +379,8 @@ jobs:
             fi
             if ./Tests/scripts/is_ami.sh ;
               then
-                sleep 150
-                echo slept 150 seconds
-                sleep 150
-                echo slept 150 seconds
+                sleep 10
+                echo slept 10 seconds
                 ./Tests/scripts/run_tests.sh "Server Master"
                 export RETVAL=$?
                 cp ./Tests/failed_tests.txt $CIRCLE_ARTIFACTS/failed_tests.txt
