@@ -267,7 +267,7 @@ def __create_incident_with_playbook(client, name, playbook_id, integrations):
         print(err)
 
     # poll the incidents queue for a max time of 25 seconds
-    timeout = time.time() + 25
+    timeout = time.time() + 120
     while incidents['total'] != 1:
         try:
             incidents = client.search_incidents(filter=search_filter)
