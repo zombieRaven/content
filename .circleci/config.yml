@@ -228,7 +228,6 @@ jobs:
 
               else
                 ./Tests/scripts/server_get_artifact.sh $SERVER_CI_TOKEN
-                cp demistoserver.sh ./Tests/scripts/awsinstancetool/ansibleinstall/demistoserver.sh
             fi
       - run:
           name: Download Configuration
@@ -249,6 +248,7 @@ jobs:
 
               else
                 ./Tests/lastest_server_build_scripts/download_demisto_conf.sh
+                cp demistoserver.sh ./Tests/scripts/awsinstancetool/ansibleinstall/demistoserver.sh
             fi
       - run:
           name: Create Instance
